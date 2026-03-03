@@ -11,19 +11,110 @@
     <style>
         * { font-family: 'Inter', sans-serif; }
     </style>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: '#0f172a',
-                        accent: '#3b82f6',
-                        surface: '#f8fafc'
-                    }
-                }
+    let allArticles = [];
+
+        async function fetchArticles() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('articles-grid').classList.add('hidden');
+            document.getElementById('no-articles').classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/articles');
+                allArticles = await response.json();
+                applyFilters(); // Call the new filter/sort function
+            } catch (error) {
+                console.error('Error fetching articles:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('no-articles').classList.remove('hidden');
             }
         }
-    </script>
+
+        function applyFilters() {
+            const source = document.getElementById('source-filter').value;
+            const sort = document.getElementById('sort-filter').value;
+
+            // 1. Filter by source
+            let filtered = source === 'all' 
+                ? [...allArticles] 
+                : allArticles.filter(a => a.source === source);
+
+            // 2. Sort the results
+            filtered.sort((a, b) => {
+                if (sort === 'popular') {
+                    return (b.popularity || 0) - (a.popularity || 0);
+                } else if (sort === 'newest') {
+                    return new Date(b.published || 0) - new Date(a.published || 0);
+                } else if (sort === 'oldest') {
+                    return new Date(a.published || 0) - new Date(b.published || 0);
+                }
+                return 0;
+            });
+
+            renderArticles(filtered);
+        }
+
+        function renderArticles(filteredArticles) {
+            const grid = document.getElementById('articles-grid');
+            document.getElementById('loading').classList.add('hidden');
+
+            if (filteredArticles.length === 0) {
+                grid.classList.add('hidden');
+                document.getElementById('no-articles').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('no-articles').classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            grid.innerHTML = filteredArticles.map(article => `
+                <article class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                    <div class="p-5 flex-1 flex flex-col">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="px-3 py-1 bg-gradient-to-r ${getSourceGradient(article.source)} text-white text-xs font-medium rounded-full">${article.source}</span>
+                            <span class="text-xs font-semibold text-red-500 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z" clip-rule="evenodd"></path></svg>
+                                ${article.popularity} views
+                            </span>
+                        </div>
+                        <h2 class="text-lg font-semibold text-slate-900 mb-2 line-clamp-2 hover:text-accent transition-colors">
+                            <a href="${article.link}" target="_blank" rel="noopener">${article.title}</a>
+                        </h2>
+                        <p class="text-slate-500 text-sm leading-relaxed flex-1 line-clamp-3">${article.summary || 'No summary available.'}</p>
+                        ${article.published ? `<span class="text-xs text-slate-400 mt-3 block">${formatDate(article.published)}</span>` : ''}
+                    </div>
+                    <div class="px-5 pb-5">
+                        <a href="${article.link}" target="_blank" rel="noopener" class="w-full block text-center bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-3 rounded-lg text-sm font-semibold transition-colors">
+                            Read Full Article
+                        </a>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function getSourceGradient(source) {
+            const gradients = {
+                'NBC Asian America': 'from-blue-500 to-cyan-500',
+                'South China Morning Post': 'from-orange-500 to-red-500',
+                'Nikkei Asia': 'from-green-500 to-teal-500',
+                'SF Standard': 'from-purple-500 to-indigo-500'
+            };
+            return gradients[source] || 'from-slate-500 to-slate-600';
+        }
+
+        function formatDate(dateStr) {
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+            } catch {
+                return '';
+            }
+        }
+
+        function refreshArticles() {
+            fetchArticles();
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchArticles);
 </head>
 <body class="bg-surface min-h-screen">
     <header class="bg-primary text-white py-6 shadow-lg">
