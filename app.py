@@ -7,7 +7,8 @@ app = Flask(__name__)
 RSS_FEEDS = {
     "NBC Asian America": "https://www.nbcnews.com/id/3032091/device/rss/rss.xml",
     "South China Morning Post": "https://www.scmp.com/rss/91/feed",
-    "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar"
+    "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar", 
+    "The San Francisco Standard": "https://sfstandard.com/feed/"
 }
 
 def fetch_articles():
