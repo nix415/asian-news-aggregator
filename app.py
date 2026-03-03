@@ -48,7 +48,8 @@ def fetch_articles():
                         "summary": summary,
                         "link": entry.get("link", "#"),
                         "source": source,
-                        "published": entry.get("published", "")
+                        "published": entry.get("published", ""),
+                        "popularity": random.randint(50, 5000) # Added mock popularity score
                     })
         except Exception as e:
             print(f"Error fetching {source}: {e}")
