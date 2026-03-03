@@ -8,7 +8,7 @@ RSS_FEEDS = {
     "NBC Asian America": "https://www.nbcnews.com/id/3032091/device/rss/rss.xml",
     "South China Morning Post": "https://www.scmp.com/rss/91/feed",
     "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar", 
-    "The San Francisco Standard": "https://sfstandard.com/feed/",
+    "The SF Standard": "https://sfstandard.com/feed/",
     "Channel News Asia": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml"
 }
 
