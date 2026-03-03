@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asia News Aggregator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { font-family: 'Inter', sans-serif; }
+    </style>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#0f172a',
+                        accent: '#3b82f6',
+                        surface: '#f8fafc'
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-surface min-h-screen">
+    <header class="bg-primary text-white py-6 shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-2xl sm:text-3xl font-bold tracking-tight">🌏 Asia News Aggregator</h1>
+                    <p class="text-slate-300 mt-1 text-sm">Your daily dose of Asian news, curated for social media</p>
+                </div>
+                <button onclick="refreshArticles()" class="bg-accent hover:bg-blue-600 px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="flex flex-wrap gap-3 mb-8">
+            <button onclick="filterBySource('all')" class="filter-btn active px-4 py-2 rounded-full text-sm font-medium bg-primary text-white transition-colors" data-source="all">All Sources</button>
+            <button onclick="filterBySource('NBC Asian America')" class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors" data-source="NBC Asian America">NBC Asian America</button>
+            <button onclick="filterBySource('South China Morning Post')" class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors" data-source="South China Morning Post">SCMP</button>
+            <button onclick="filterBySource('Nikkei Asia')" class="filter-btn px-4 py-2 rounded-full text-sm font-medium bg-white text-slate-700 border border-slate-200 hover:bg-slate-50 transition-colors" data-source="Nikkei Asia">Nikkei Asia</button>
+        </div>
+
+        <div id="loading" class="flex flex-col items-center justify-center py-20">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-accent"></div>
+            <p class="text-slate-500 mt-4">Fetching latest news...</p>
+        </div>
+
+        <div id="articles-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 hidden"></div>
+
+        <div id="no-articles" class="hidden text-center py-20">
+            <p class="text-slate-500 text-lg">No articles found. Try refreshing.</p>
+        </div>
+    </main>
+
+    <div id="pitch-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full mx-4 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-slate-900">📱 Social Media Pitch</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div id="pitch-content" class="bg-gradient-to-br from-purple-50 to-blue-50 rounded-xl p-4 text-slate-700 leading-relaxed"></div>
+            <div class="flex gap-3 mt-4">
+                <button onclick="copyPitch()" class="flex-1 bg-accent hover:bg-blue-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Copy to Clipboard
+                </button>
+                <button onclick="regeneratePitch()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg font-medium transition-colors">
+                    Regenerate
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allArticles = [];
+        let currentFilter = 'all';
+        let currentPitchData = null;
+
+        async function fetchArticles() {
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('articles-grid').classList.add('hidden');
+            document.getElementById('no-articles').classList.add('hidden');
+
+            try {
+                const response = await fetch('/api/articles');
+                allArticles = await response.json();
+                renderArticles();
+            } catch (error) {
+                console.error('Error fetching articles:', error);
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('no-articles').classList.remove('hidden');
+            }
+        }
+
+        function renderArticles() {
+            const grid = document.getElementById('articles-grid');
+            const filtered = currentFilter === 'all' 
+                ? allArticles 
+                : allArticles.filter(a => a.source === currentFilter);
+
+            document.getElementById('loading').classList.add('hidden');
+
+            if (filtered.length === 0) {
+                grid.classList.add('hidden');
+                document.getElementById('no-articles').classList.remove('hidden');
+                return;
+            }
+
+            document.getElementById('no-articles').classList.add('hidden');
+            grid.classList.remove('hidden');
+
+            grid.innerHTML = filtered.map((article, index) => `
+                <article class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden hover:shadow-lg transition-shadow duration-300 flex flex-col">
+                    <div class="p-5 flex-1 flex flex-col">
+                        <div class="flex items-center gap-2 mb-3">
+                            <span class="px-3 py-1 bg-gradient-to-r ${getSourceGradient(article.source)} text-white text-xs font-medium rounded-full">${article.source}</span>
+                            ${article.published ? `<span class="text-xs text-slate-400">${formatDate(article.published)}</span>` : ''}
+                        </div>
+                        <h2 class="text-lg font-semibold text-slate-900 mb-2 line-clamp-2 hover:text-accent transition-colors">
+                            <a href="${article.link}" target="_blank" rel="noopener">${article.title}</a>
+                        </h2>
+                        <p class="text-slate-500 text-sm leading-relaxed flex-1 line-clamp-3">${article.summary || 'No summary available.'}</p>
+                    </div>
+                    <div class="px-5 pb-5 flex gap-2">
+                        <a href="${article.link}" target="_blank" rel="noopener" class="flex-1 text-center bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            Read More →
+                        </a>
+                        <button onclick='generatePitch(${JSON.stringify(article).replace(/'/g, "&#39;")})' class="flex-1 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all">
+                            ✨ Social Pitch
+                        </button>
+                    </div>
+                </article>
+            `).join('');
+        }
+
+        function getSourceGradient(source) {
+            const gradients = {
+                'NBC Asian America': 'from-blue-500 to-cyan-500',
+                'South China Morning Post': 'from-orange-500 to-red-500',
+                'Nikkei Asia': 'from-green-500 to-teal-500'
+            };
+            return gradients[source] || 'from-slate-500 to-slate-600';
+        }
+
+        function formatDate(dateStr) {
+            try {
+                const date = new Date(dateStr);
+                return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+            } catch {
+                return '';
+            }
+        }
+
+        function filterBySource(source) {
+            currentFilter = source;
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.source === source) {
+                    btn.classList.add('bg-primary', 'text-white');
+                    btn.classList.remove('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+                } else {
+                    btn.classList.remove('bg-primary', 'text-white');
+                    btn.classList.add('bg-white', 'text-slate-700', 'border', 'border-slate-200');
+                }
+            });
+            renderArticles();
+        }
+
+        async function generatePitch(article) {
+            currentPitchData = article;
+            const modal = document.getElementById('pitch-modal');
+            const content = document.getElementById('pitch-content');
+            
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            content.innerHTML = '<div class="flex items-center gap-2"><div class="animate-spin rounded-full h-4 w-4 border-b-2 border-accent"></div> Generating pitch...</div>';
+
+            try {
+                const response = await fetch('/api/generate-pitch', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ title: article.title, summary: article.summary })
+                });
+                const data = await response.json();
+                content.textContent = data.pitch;
+            } catch (error) {
+                content.textContent = 'Error generating pitch. Please try again.';
+            }
+        }
+
+        async function regeneratePitch() {
+            if (currentPitchData) {
+                await generatePitch(currentPitchData);
+            }
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('pitch-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+        }
+
+        function copyPitch() {
+            const content = document.getElementById('pitch-content').textContent;
+            navigator.clipboard.writeText(content).then(() => {
+                const btn = event.target.closest('button');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg> Copied!';
+                setTimeout(() => btn.innerHTML = originalText, 2000);
+            });
+        }
+
+        function refreshArticles() {
+            fetchArticles();
+        }
+
+        document.addEventListener('DOMContentLoaded', fetchArticles);
+    </script>
+</body>
+</html>
