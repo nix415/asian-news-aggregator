@@ -14,22 +14,40 @@ RSS_FEEDS = {
 
 def fetch_articles():
     articles = []
+    
+    # 1. Define your "Asian-founded" vibe keywords here (must be lowercase)
+    keywords = [
+        "asian", "aapi", "kpop", "k-pop", "korean", "japanese", "chinese", 
+        "filipino", "vietnamese", "hmart", "h-mart", "99 ranch", "supermarket", 
+        "olympic", "medal", "founder", "boba", "community", "culture", "actor"
+    ]
+    
     for source, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url)
-            for entry in feed.entries[:10]:
+            
+            # 2. Grab the top 30 recent articles to cast a wider net
+            for entry in feed.entries[:30]:
+                title = entry.get("title", "No Title")
                 summary = entry.get("summary", entry.get("description", ""))
-                if summary:
-                    summary = summary[:200] + "..." if len(summary) > 200 else summary
-                articles.append({
-                    "title": entry.get("title", "No Title"),
-                    "summary": summary,
-                    "link": entry.get("link", "#"),
-                    "source": source,
-                    "published": entry.get("published", "")
-                })
+                
+                # 3. Combine title and summary and make it lowercase for scanning
+                search_text = (title + " " + summary).lower()
+                
+                # 4. If ANY keyword is found in the text, keep the article!
+                if any(word in search_text for word in keywords):
+                    if summary:
+                        summary = summary[:200] + "..." if len(summary) > 200 else summary
+                    articles.append({
+                        "title": title,
+                        "summary": summary,
+                        "link": entry.get("link", "#"),
+                        "source": source,
+                        "published": entry.get("published", "")
+                    })
         except Exception as e:
             print(f"Error fetching {source}: {e}")
+            
     return articles
 
 def generate_social_pitch(title, summary):
