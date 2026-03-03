@@ -9,7 +9,12 @@ RSS_FEEDS = {
     "South China Morning Post": "https://www.scmp.com/rss/91/feed",
     "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar", 
     "The SF Standard": "https://sfstandard.com/feed/",
-    "Channel News Asia": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml"
+    "Channel News Asia": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
+    "NextShark": "https://nextshark.com/feed",
+    "AsAmNews": "https://asamnews.com/feed/",
+    "The Korea Herald": "https://www.koreaherald.com/rss/newsAll", 
+    "Character Media": "https://charactermedia.com/feed/",
+    
 }
 
 def fetch_articles():
