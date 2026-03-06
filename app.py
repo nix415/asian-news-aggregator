@@ -8,15 +8,33 @@ from email.utils import parsedate_to_datetime
 app = Flask(__name__)
 
 RSS_FEEDS = {
+    # --- AAPI Community & Culture ---
     "NBC Asian America": "https://www.nbcnews.com/id/3032091/device/rss/rss.xml",
-    "South China Morning Post": "https://www.scmp.com/rss/91/feed",
-    "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar",
-    "The SF Standard": "https://sfstandard.com/feed/",
-    "Channel News Asia": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
     "NextShark": "https://nextshark.com/feed",
-    "AsAmNews": "https://asamnews.com/feed/",
-    "The Korea Herald": "https://www.koreaherald.com/rss/newsAll",
     "Character Media": "https://charactermedia.com/feed/",
+    "AsAmNews": "https://asamnews.com/feed/",
+    "Hyphen Magazine": "https://hyphenmagazine.com/rss.xml",
+    
+    # --- Business & Entrepreneurship ---
+    "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar",
+    "South China Morning Post": "https://www.scmp.com/rss/91/feed",
+    "Forbes Asia": "https://www.forbes.com/asia/feed/",
+    "TechNode (China Tech)": "https://technode.com/feed/",
+    "e27 (SE Asia Startups)": "https://e27.co/feed/",
+    
+    # --- Entertainment & Pop Culture ---
+    "Soompi (K-Pop & K-Drama)": "https://www.soompi.com/feed",
+    "AllKpop": "https://www.allkpop.com/rss",
+    "Anime News Network": "https://www.animenewsnetwork.com/news/rss.xml",
+    "Koreaboo": "https://www.koreaboo.com/feed/",
+    
+    # --- Regional & Global News ---
+    "CNA (Channel News Asia)": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
+    "The Japan Times": "https://www.japantimes.co.jp/feed/",
+    "Yonhap News (Korea)": "https://en.yna.co.kr/RSS/index.xml",
+    "The Straits Times": "https://www.straitstimes.com/news/asia/rss.xml",
+    "The SF Standard": "https://sfstandard.com/feed/",
+    "The News Lens (Taiwan/Asia)": "https://international.thenewslens.com/rss"
 }
 
 def parse_date(date_str):
