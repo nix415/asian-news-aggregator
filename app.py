@@ -1,87 +1,147 @@
 from flask import Flask, render_template, jsonify, request
 import feedparser
-import random
+import anthropic
+from datetime import datetime, timezone
+import re
+from email.utils import parsedate_to_datetime
 
 app = Flask(__name__)
 
 RSS_FEEDS = {
     "NBC Asian America": "https://www.nbcnews.com/id/3032091/device/rss/rss.xml",
     "South China Morning Post": "https://www.scmp.com/rss/91/feed",
-    "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar", 
+    "Nikkei Asia": "https://asia.nikkei.com/rss/feed/nar",
     "The SF Standard": "https://sfstandard.com/feed/",
     "Channel News Asia": "https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml",
     "NextShark": "https://nextshark.com/feed",
     "AsAmNews": "https://asamnews.com/feed/",
-    "The Korea Herald": "https://www.koreaherald.com/rss/newsAll", 
+    "The Korea Herald": "https://www.koreaherald.com/rss/newsAll",
     "Character Media": "https://charactermedia.com/feed/",
-    
 }
+
+def parse_date(date_str):
+    if not date_str:
+        return None
+    try:
+        return parsedate_to_datetime(date_str)
+    except Exception:
+        pass
+    try:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    except Exception:
+        pass
+    return None
+
+def calculate_trending_score(published_str):
+    """Score 0-100 based on recency. Newer = higher score."""
+    pub_date = parse_date(published_str)
+    if not pub_date:
+        return 30
+    try:
+        now = datetime.now(timezone.utc)
+        if pub_date.tzinfo is None:
+            pub_date = pub_date.replace(tzinfo=timezone.utc)
+        hours_ago = (now - pub_date).total_seconds() / 3600
+        if hours_ago < 2:
+            return 98
+        elif hours_ago < 6:
+            return 90
+        elif hours_ago < 12:
+            return 80
+        elif hours_ago < 24:
+            return 70
+        elif hours_ago < 48:
+            return 55
+        elif hours_ago < 72:
+            return 40
+        else:
+            return max(10, int(30 - hours_ago / 24))
+    except Exception:
+        return 30
 
 def fetch_articles():
     articles = []
-    
-    # 1. Define your "Asian-founded" vibe keywords here (must be lowercase)
     keywords = [
-        "asian", "aapi", "kpop", "k-pop", "korean", "japanese", "chinese", 
-        "filipino", "vietnamese", "hmart", "h-mart", "99 ranch", "supermarket", 
-        "olympic", "medal", "founder", "boba", "community", "culture", "actor"
+        "asian", "aapi", "kpop", "k-pop", "korean", "japanese", "chinese",
+        "filipino", "vietnamese", "hmart", "h-mart", "99 ranch", "supermarket",
+        "olympic", "medal", "founder", "boba", "community", "culture", "actor",
+        "taiwan", "hong kong", "singapore", "thailand", "india", "indonesia"
     ]
-    
+
     for source, url in RSS_FEEDS.items():
         try:
             feed = feedparser.parse(url)
-            
-            # 2. Grab the top 30 recent articles to cast a wider net
             for entry in feed.entries[:30]:
                 title = entry.get("title", "No Title")
                 summary = entry.get("summary", entry.get("description", ""))
-                
-                # 3. Combine title and summary and make it lowercase for scanning
-                search_text = (title + " " + summary).lower()
-                
-                # 4. If ANY keyword is found in the text, keep the article!
+                # Strip HTML tags from summary
+                clean_summary = re.sub(r'<[^>]+>', '', summary).strip()
+                search_text = (title + " " + clean_summary).lower()
+
                 if any(word in search_text for word in keywords):
-                    if summary:
-                        summary = summary[:200] + "..." if len(summary) > 200 else summary
+                    short_summary = (clean_summary[:200] + "...") if len(clean_summary) > 200 else clean_summary
+                    published = entry.get("published", "")
                     articles.append({
                         "title": title,
-                        "summary": summary,
+                        "summary": short_summary,
                         "link": entry.get("link", "#"),
                         "source": source,
-                        "published": entry.get("published", ""),
-                        "popularity": random.randint(50, 5000) # Added mock popularity score
+                        "published": published,
+                        "trending_score": calculate_trending_score(published)
                     })
         except Exception as e:
             print(f"Error fetching {source}: {e}")
-            
+
     return articles
 
-def generate_social_pitch(title, summary):
-    pitches = [
-        f"🌏 Breaking: {title[:80]}... This is a must-read for anyone following Asian news. Tap the link to stay informed! #AsianNews #CurrentEvents",
-        f"📰 {title[:60]}... Here's what you need to know about the latest developments in Asia. Don't miss this! #Asia #News",
-        f"🔥 Hot off the press: {title[:70]}... Stay ahead of the curve with this important update. #AsianAmerican #WorldNews",
-        f"✨ Must-read alert! {title[:65]}... This story is making waves across Asia. Check it out! #Breaking #AsiaNews",
-        f"🌐 Your daily Asia update: {title[:60]}... Get the full story and share your thoughts! #GlobalNews #Asia"
-    ]
-    return random.choice(pitches)
 
 @app.route("/")
 def index():
     return render_template("index.html")
+
 
 @app.route("/api/articles")
 def get_articles():
     articles = fetch_articles()
     return jsonify(articles)
 
+
 @app.route("/api/generate-pitch", methods=["POST"])
 def generate_pitch():
     data = request.json
     title = data.get("title", "")
     summary = data.get("summary", "")
-    pitch = generate_social_pitch(title, summary)
-    return jsonify({"pitch": pitch})
+    platform = data.get("platform", "twitter")
+
+    platform_instructions = {
+        "twitter": "Write a punchy tweet (max 240 chars). Use 2-3 relevant hashtags. Make it hook readers immediately. No fluff.",
+        "instagram": "Write an engaging Instagram caption (2-4 sentences + line breaks). Add 8-10 relevant hashtags at the end. Use 1-2 emojis naturally.",
+        "linkedin": "Write a professional LinkedIn post (3-4 sentences). Focus on why this matters for business/culture. No hashtag spam — max 3 hashtags."
+    }
+
+    prompt = f"""You are a social media strategist specializing in Asian American and Asian news content.
+
+Article Title: {title}
+Article Summary: {summary}
+Platform: {platform.capitalize()}
+
+Task: {platform_instructions.get(platform, platform_instructions["twitter"])}
+
+Write ONLY the social media post. No intro, no explanation, no quotes around it."""
+
+    try:
+        client = anthropic.Anthropic()
+        message = client.messages.create(
+            model="claude-opus-4-5",
+            max_tokens=300,
+            messages=[{"role": "user", "content": prompt}]
+        )
+        pitch = message.content[0].text.strip()
+        return jsonify({"pitch": pitch})
+    except Exception as e:
+        print(f"Anthropic API error: {e}")
+        return jsonify({"error": "Could not generate pitch. Check your API key."}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True)
