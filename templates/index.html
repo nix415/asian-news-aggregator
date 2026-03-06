@@ -357,8 +357,15 @@
         /* ─── ARTICLES GRID ─── */
         #articles-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(3, 1fr);
             gap: 32px;
+        }
+
+        @media (max-width: 900px) {
+            #articles-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 580px) {
+            #articles-grid { grid-template-columns: 1fr; }
         }
 
         /* ─── ARTICLE CARD ─── */
@@ -413,15 +420,47 @@
             gap: 8px;
         }
 
-        .source-pill {
+        .source-brand {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            min-width: 0;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .source-favicon {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            object-fit: contain;
+            background: rgba(0,0,0,0.05);
+        }
+
+        .source-favicon-fallback {
+            width: 18px;
+            height: 18px;
+            border-radius: 3px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-family: 'Syne', sans-serif;
-            font-size: 10px;
-            font-weight: 700;
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            padding: 4px 10px;
-            border-radius: 100px;
+            font-size: 9px;
+            font-weight: 800;
+            color: white;
+        }
+
+        .source-name {
+            font-family: 'DM Sans', sans-serif;
+            font-size: 12px;
+            font-weight: 600;
+            color: #2a2a3a;
             white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
         }
 
         .trending-badge {
@@ -678,30 +717,30 @@
     let activeSource = 'all';
     let gridCollapsed = false;
 
-    // ─── SOURCE COLORS ───
-    const sourceClass = {
-        'NBC Asian America': 'src-nbc',
-        'South China Morning Post': 'src-scmp',
-        'Nikkei Asia': 'src-nikkei',
-        'The SF Standard': 'src-sf',
-        'Channel News Asia': 'src-cna',
-        'NextShark': 'src-next',
-        'AsAmNews': 'src-asam',
-        'The Korea Herald': 'src-korea',
-        'Character Media': 'src-char'
+    // ─── SOURCE META (favicon + full name) ───
+    const sourceMeta = {
+        'NBC Asian America':        { favicon: 'https://www.nbcnews.com/favicon.ico',                      name: 'NBC Asian America',        color: '#0057a8' },
+        'South China Morning Post': { favicon: 'https://www.scmp.com/favicon.ico',                         name: 'South China Morning Post', color: '#c8102e' },
+        'Nikkei Asia':              { favicon: 'https://asia.nikkei.com/favicon.ico',                      name: 'Nikkei Asia',              color: '#e60012' },
+        'The SF Standard':          { favicon: 'https://sfstandard.com/favicon.ico',                       name: 'The SF Standard',          color: '#6633cc' },
+        'Channel News Asia':        { favicon: 'https://www.channelnewsasia.com/favicon.ico',               name: 'Channel News Asia',        color: '#e4002b' },
+        'NextShark':                { favicon: 'https://nextshark.com/favicon.ico',                        name: 'NextShark',                color: '#e91e63' },
+        'AsAmNews':                 { favicon: 'https://asamnews.com/favicon.ico',                         name: 'AsAmNews',                 color: '#009688' },
+        'The Korea Herald':         { favicon: 'https://www.koreaherald.com/favicon.ico',                  name: 'The Korea Herald',         color: '#c0392b' },
+        'Character Media':          { favicon: 'https://charactermedia.com/favicon.ico',                   name: 'Character Media',          color: '#5c6bc0' }
     };
 
-    const sourceShort = {
-        'NBC Asian America': 'NBC AAPI',
-        'South China Morning Post': 'SCMP',
-        'Nikkei Asia': 'Nikkei Asia',
-        'The SF Standard': 'SF Standard',
-        'Channel News Asia': 'CNA',
-        'NextShark': 'NextShark',
-        'AsAmNews': 'AsAmNews',
-        'The Korea Herald': 'Korea Herald',
-        'Character Media': 'Character Media'
-    };
+    function getSourceHTML(sourceName) {
+        const meta = sourceMeta[sourceName];
+        if (!meta) {
+            return `<div class="source-brand"><div class="source-favicon-fallback" style="background:#555">${sourceName[0]}</div><span class="source-name">${sourceName}</span></div>`;
+        }
+        return `<div class="source-brand">
+            <img class="source-favicon" src="${meta.favicon}" alt="" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+            <div class="source-favicon-fallback" style="background:${meta.color};display:none">${sourceName[0]}</div>
+            <span class="source-name">${meta.name}</span>
+        </div>`;
+    }
 
     // ─── FETCH ───
     async function fetchArticles() {
@@ -828,16 +867,13 @@
                 ? `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 17l5-5-5-5M6 17l5-5-5-5"/></svg>`
                 : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/></svg>`;
 
-            const srcClass = sourceClass[article.source] || 'src-default';
-            const srcShort = sourceShort[article.source] || article.source;
-
             return `
             <article class="article-card" style="animation-delay:${Math.min(i * 0.04, 0.6)}s">
                 <div class="card-header">
-                    <span class="source-pill ${srcClass}">${srcShort}</span>
-                    <span class="trending-badge ${trendClass}">
+                    ${getSourceHTML(article.source)}
+                    <span class="trending-badge ${trendClass}" style="flex-shrink:0;margin-left:8px">
                         ${trendIcon}
-                        Score ${score}
+                        ${score}
                     </span>
                 </div>
                 <div class="card-body">
