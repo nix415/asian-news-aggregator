@@ -109,11 +109,14 @@
             font-weight: 800;
             font-size: 22px;
             letter-spacing: -0.5px;
-            color: var(--text);
             line-height: 1;
             display: flex;
             align-items: baseline;
             gap: 0;
+            background: linear-gradient(45deg, #6E3833 0%, #5C3E48 35%, #64837A 70%, #908083 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .logo-news {
@@ -121,7 +124,8 @@
             font-weight: 400;
             letter-spacing: 1.5px;
             text-transform: uppercase;
-            color: var(--text-muted);
+            color: #908083;
+            -webkit-text-fill-color: #908083;
             margin: 0 3px;
             position: relative;
             top: -1px;
