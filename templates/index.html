@@ -70,7 +70,7 @@
         .header-center {
             text-align: center;
             font-family: 'Times New Roman', Times, serif;
-            font-size: 13px;
+            font-size: 18px;
             font-style: italic;
             color: var(--text-muted);
             letter-spacing: 0.2px;
@@ -357,19 +357,20 @@
         /* ─── ARTICLES GRID ─── */
         #articles-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-            gap: 18px;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 32px;
         }
 
         /* ─── ARTICLE CARD ─── */
         .article-card {
             background: #ffffff;
             border: 1px solid rgba(0,0,0,0.08);
-            border-radius: 16px;
+            border-radius: 4px;
             overflow: hidden;
             display: flex;
             flex-direction: column;
-            transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s;
+            aspect-ratio: 1 / 1;
+            transition: border-color 0.25s, transform 0.25s, box-shadow 0.25s, opacity 0.3s, scale 0.3s;
             animation: fadeUp 0.4s ease backwards;
         }
 
@@ -377,6 +378,25 @@
             border-color: rgba(0,0,0,0.15);
             transform: translateY(-2px);
             box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+        }
+
+        /* collapse animation */
+        #articles-grid.collapsing .article-card {
+            animation: collapseCard 0.35s ease forwards;
+        }
+
+        #articles-grid.expanding .article-card {
+            animation: expandCard 0.35s ease backwards;
+        }
+
+        @keyframes collapseCard {
+            0%   { opacity: 1; transform: scale(1); }
+            100% { opacity: 0; transform: scale(0.6); }
+        }
+
+        @keyframes expandCard {
+            0%   { opacity: 0; transform: scale(0.6); }
+            100% { opacity: 1; transform: scale(1); }
         }
 
         @keyframes fadeUp {
@@ -616,7 +636,7 @@
 
     <div class="filter-bar" id="filter-bar" style="display:none">
         <span class="filter-label">Source</span>
-        <button class="filter-btn active" data-source="all" onclick="setSource(this, 'all')">All</button>
+        <button class="filter-btn active" id="btn-all" data-source="all" onclick="toggleAll(this)">All</button>
         <button class="filter-btn" data-source="NBC Asian America" onclick="setSource(this, 'NBC Asian America')">NBC AAPI</button>
         <button class="filter-btn" data-source="South China Morning Post" onclick="setSource(this, 'South China Morning Post')">SCMP</button>
         <button class="filter-btn" data-source="Nikkei Asia" onclick="setSource(this, 'Nikkei Asia')">Nikkei</button>
@@ -656,6 +676,7 @@
 <script>
     let allArticles = [];
     let activeSource = 'all';
+    let gridCollapsed = false;
 
     // ─── SOURCE COLORS ───
     const sourceClass = {
@@ -716,7 +737,44 @@
     }
 
     // ─── FILTERS ───
+    function toggleAll(btn) {
+        const grid = document.getElementById('articles-grid');
+        if (gridCollapsed) {
+            // Expand: show grid, play expand animation
+            gridCollapsed = false;
+            btn.textContent = 'All';
+            btn.classList.add('active');
+            grid.style.display = 'grid';
+            grid.classList.remove('collapsing');
+            grid.classList.add('expanding');
+            // stagger delays
+            grid.querySelectorAll('.article-card').forEach((c, i) => {
+                c.style.animationDelay = `${Math.min(i * 0.04, 0.5)}s`;
+            });
+            setTimeout(() => grid.classList.remove('expanding'), 600);
+        } else {
+            // Collapse: animate out, then hide
+            gridCollapsed = true;
+            btn.textContent = 'Show All';
+            btn.classList.remove('active');
+            grid.classList.remove('expanding');
+            grid.classList.add('collapsing');
+            grid.querySelectorAll('.article-card').forEach((c, i) => {
+                c.style.animationDelay = `${Math.min(i * 0.03, 0.4)}s`;
+            });
+            setTimeout(() => {
+                grid.style.display = 'none';
+                grid.classList.remove('collapsing');
+            }, 550);
+        }
+    }
+
     function setSource(btn, source) {
+        // If grid is collapsed, expand it first
+        if (gridCollapsed) {
+            gridCollapsed = false;
+            document.getElementById('btn-all').textContent = 'All';
+        }
         document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         activeSource = source;
