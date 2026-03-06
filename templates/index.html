@@ -91,10 +91,25 @@
 
         .logo-text {
             font-family: 'Syne', sans-serif;
-            font-weight: 700;
-            font-size: 18px;
-            letter-spacing: -0.3px;
+            font-weight: 800;
+            font-size: 22px;
+            letter-spacing: -0.5px;
             color: var(--text);
+            line-height: 1;
+            display: flex;
+            align-items: baseline;
+            gap: 0;
+        }
+
+        .logo-news {
+            font-size: 9px;
+            font-weight: 400;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin: 0 3px;
+            position: relative;
+            top: -1px;
         }
 
         .logo-tag {
@@ -104,39 +119,51 @@
             letter-spacing: 0.5px;
         }
 
-        .header-search {
-            flex: 1;
-            max-width: 380px;
+        /* ─── BOTTOM SEARCH BAR ─── */
+        .bottom-search {
+            position: fixed;
+            bottom: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 200;
+            width: min(520px, calc(100vw - 40px));
+        }
+
+        .bottom-search-inner {
             position: relative;
+            background: rgba(15, 15, 25, 0.55);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 100px;
+            padding: 12px 20px 12px 46px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transition: background 0.2s, border-color 0.2s;
         }
 
-        .header-search input {
+        .bottom-search-inner:focus-within {
+            background: rgba(15, 15, 25, 0.75);
+            border-color: rgba(255,255,255,0.2);
+        }
+
+        .bottom-search .search-icon {
+            left: 18px;
+            color: rgba(255,255,255,0.35);
+        }
+
+        .bottom-search input {
             width: 100%;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 9px 14px 9px 38px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 13px;
-            color: var(--text);
+            background: transparent;
+            border: none;
             outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 14px;
+            color: rgba(255,255,255,0.85);
+            letter-spacing: 0.1px;
         }
 
-        .header-search input::placeholder { color: var(--text-muted); }
-
-        .header-search input:focus {
-            border-color: var(--border-hover);
-            box-shadow: 0 0 0 3px rgba(255,255,255,0.04);
-        }
-
-        .search-icon {
-            position: absolute;
-            left: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text-muted);
-            pointer-events: none;
+        .bottom-search input::placeholder {
+            color: rgba(255,255,255,0.3);
         }
 
         .header-actions {
@@ -176,7 +203,7 @@
         main {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 32px 2rem;
+            padding: 32px 2rem 120px;
             position: relative;
             z-index: 1;
         }
@@ -198,9 +225,9 @@
         }
 
         .stat-value {
-            font-family: 'Syne', sans-serif;
-            font-size: 22px;
-            font-weight: 800;
+            font-family: 'Times New Roman', Times, serif;
+            font-size: 26px;
+            font-weight: 700;
             color: var(--text);
             line-height: 1;
         }
@@ -517,11 +544,10 @@
         /* ─── RESPONSIVE ─── */
         @media (max-width: 640px) {
             header { padding: 0 1rem; }
-            .header-search { display: none; }
-            main { padding: 24px 1rem; }
+            main { padding: 24px 1rem 120px; }
             #articles-grid { grid-template-columns: 1fr; }
             .stats-bar { gap: 16px; }
-            .stat-value { font-size: 18px; }
+            .stat-value { font-size: 20px; }
         }
     </style>
 </head>
@@ -530,18 +556,10 @@
 <header>
     <div class="header-inner">
         <div class="logo">
-            <div class="logo-mark">S</div>
-            <div>
-                <div class="logo-text">Signal</div>
-                <div class="logo-tag">Asian News Dashboard</div>
+            <div class="logo-mark">A</div>
+            <div class="logo-text">
+                Asian<span class="logo-news">news</span>Founded
             </div>
-        </div>
-
-        <div class="header-search">
-            <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-            </svg>
-            <input type="text" id="search-input" placeholder="Search articles..." oninput="applyFilters()">
         </div>
 
         <div class="header-actions">
@@ -604,6 +622,15 @@
         <p>No articles found. Try adjusting your filters or refreshing.</p>
     </div>
 </main>
+
+<div class="bottom-search">
+    <div class="bottom-search-inner">
+        <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="position:absolute;left:18px;top:50%;transform:translateY(-50%);color:rgba(255,255,255,0.35);pointer-events:none;">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+        </svg>
+        <input type="text" id="search-input" placeholder="Search articles..." oninput="applyFilters()">
+    </div>
+</div>
 
 <div id="toast">✓ Copied to clipboard</div>
 
