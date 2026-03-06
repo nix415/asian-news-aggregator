@@ -59,6 +59,36 @@ def calculate_trending_score(published_str):
     except Exception:
         return 30
 
+
+def extract_image(entry):
+    """Try every common RSS image location, return URL or None."""
+    # 1. media:content or media:thumbnail
+    media = entry.get("media_content", [])
+    if media:
+        for m in media:
+            url = m.get("url", "")
+            if url and any(url.lower().endswith(ext) for ext in (".jpg", ".jpeg", ".png", ".webp", ".gif")):
+                return url
+        if media[0].get("url"):
+            return media[0]["url"]
+
+    media_thumb = entry.get("media_thumbnail", [])
+    if media_thumb and media_thumb[0].get("url"):
+        return media_thumb[0]["url"]
+
+    # 2. enclosures (podcasts/images)
+    for enc in entry.get("enclosures", []):
+        if enc.get("type", "").startswith("image"):
+            return enc.get("href") or enc.get("url", "")
+
+    # 3. Parse first <img> tag out of summary/content HTML
+    html = entry.get("summary", "") or entry.get("content", [{}])[0].get("value", "") if entry.get("content") else entry.get("summary", "")
+    match = re.search(r'<img[^>]+src=["\']([^"\']+)["\']', html)
+    if match:
+        return match.group(1)
+
+    return None
+
 def fetch_articles():
     articles = []
     keywords = [
@@ -74,19 +104,20 @@ def fetch_articles():
             for entry in feed.entries[:30]:
                 title = entry.get("title", "No Title")
                 summary = entry.get("summary", entry.get("description", ""))
-                # Strip HTML tags from summary
                 clean_summary = re.sub(r'<[^>]+>', '', summary).strip()
                 search_text = (title + " " + clean_summary).lower()
 
                 if any(word in search_text for word in keywords):
                     short_summary = (clean_summary[:200] + "...") if len(clean_summary) > 200 else clean_summary
                     published = entry.get("published", "")
+                    image_url = extract_image(entry)
                     articles.append({
                         "title": title,
                         "summary": short_summary,
                         "link": entry.get("link", "#"),
                         "source": source,
                         "published": published,
+                        "image": image_url,
                         "trending_score": calculate_trending_score(published)
                     })
         except Exception as e:
