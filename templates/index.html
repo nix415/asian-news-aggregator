@@ -6,7 +6,7 @@
     <title>Signal — Asian News Dashboard</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;1,9..40,300&family=Cinzel:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
             --bg: #0a0a0f;
@@ -67,14 +67,18 @@
             gap: 1rem;
         }
 
-        .header-center {
-            text-align: center;
+        .header-tagline {
+            text-align: left;
             font-family: 'Times New Roman', Times, serif;
             font-size: 18px;
             font-style: italic;
             color: #ffffff;
             letter-spacing: 0.2px;
             white-space: nowrap;
+        }
+
+        .header-center {
+            text-align: center;
         }
 
         .header-right {
@@ -105,15 +109,15 @@
         }
 
         .logo-text {
-            font-family: 'Syne', sans-serif;
-            font-weight: 800;
+            font-family: 'Cinzel', serif;
+            font-weight: 400;
             font-size: 22px;
-            letter-spacing: -0.5px;
+            letter-spacing: 1.5px;
             line-height: 1;
             display: flex;
             align-items: baseline;
             gap: 0;
-            background: linear-gradient(45deg, #6E3833 0%, #5C3E48 35%, #64837A 70%, #908083 100%);
+            background: linear-gradient(45deg, #C4655C 0%, #9A6478 35%, #8BBFB3 70%, #C4B0B4 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
@@ -122,13 +126,14 @@
         .logo-news {
             font-size: 9px;
             font-weight: 400;
-            letter-spacing: 1.5px;
+            font-family: 'Syne', sans-serif;
+            letter-spacing: 2px;
             text-transform: uppercase;
-            color: #908083;
-            -webkit-text-fill-color: #908083;
-            margin: 0 3px;
+            color: #C4B0B4;
+            -webkit-text-fill-color: #C4B0B4;
+            margin: 0 5px;
             position: relative;
-            top: -1px;
+            top: -2px;
         }
 
         .logo-tag {
@@ -651,14 +656,16 @@
 
 <header>
     <div class="header-inner">
-        <div class="logo">
-            <div class="logo-text">
-                Asian<span class="logo-news">news</span>Founded
-            </div>
+        <div class="header-tagline">
+            Your roundup of business, news, &amp; the new.
         </div>
 
         <div class="header-center">
-            Your roundup of business, news, &amp; the new.
+            <div class="logo">
+                <div class="logo-text">
+                    Asian<span class="logo-news">news</span>Founded
+                </div>
+            </div>
         </div>
 
         <div class="header-right">
