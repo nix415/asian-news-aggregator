@@ -19,51 +19,58 @@ RSS_FEEDS = {
     "Character Media": "https://charactermedia.com/feed/",
 }
 
-CATEGORIES = ["Founders", "Culture", "Entertainment", "Community"]
+CATEGORIES = ["Brand & Founder", "Culture", "Community", "Lifestyle & New Openings"]
 
 # Checked in order — first match wins
 CATEGORY_KEYWORDS = {
-    "Entertainment": [
-        "kpop", "k-pop", "bts", "blackpink", "twice", "stray kids", "aespa",
-        "k-drama", "kdrama", "webtoon", "anime", "manga", "hallyu", "idol",
-        "entertainment", "actor", "actress", "film", "movie", "music",
-        "concert", "album", "debut", "drama", "celebrity", "award", "oscar",
-        "grammy", "emmy", "streaming", "netflix", "disney", "tv show",
-    ],
-    "Founders": [
-        "founder", "startup", "venture", "ceo", "funding", "investor",
+    "Brand & Founder": [
+        "founder", "brand", "startup", "ceo", "funding", "investor",
         "ipo", "acquisition", "business", "entrepreneur", "company",
-        "tech", "silicon valley", "economy", "market", "revenue",
-        "finance", "trade", "gdp", "stock", "investment", "unicorn",
-        "incubator", "accelerator", "seed round", "series a",
+        "beauty", "fashion", "skincare", "cosmetics", "apparel", "clothing",
+        "home goods", "lifestyle brand", "direct-to-consumer", "dtc",
+        "asian-owned", "asian owned", "small business", "boutique",
+        "revenue", "investment", "unicorn", "series a", "seed round",
+        "product launch", "collection", "collaboration", "collab",
     ],
     "Culture": [
-        "culture", "heritage", "festival", "tradition", "food", "boba",
-        "hmart", "h-mart", "99 ranch", "restaurant", "cuisine", "identity",
-        "diaspora", "art", "exhibit", "museum", "literature", "fashion",
-        "design", "architecture", "photography", "travel", "language",
+        "culture", "heritage", "festival", "tradition", "identity",
+        "diaspora", "art", "exhibit", "museum", "literature",
+        "design", "architecture", "photography", "language",
+        "kpop", "k-pop", "bts", "blackpink", "hallyu", "idol",
+        "k-drama", "kdrama", "anime", "manga", "webtoon",
+        "film", "movie", "music", "concert", "album", "drama",
+        "celebrity", "actor", "actress", "award", "entertainment",
     ],
     "Community": [
         "community", "aapi", "asian american", "immigration", "activism",
         "protest", "discrimination", "hate crime", "representation",
-        "policy", "election", "government", "military", "diplomatic",
+        "policy", "election", "government", "diplomatic",
         "china", "japan", "korea", "taiwan", "hong kong", "singapore",
         "philippines", "vietnam", "thailand", "indonesia", "india",
         "beijing", "tokyo", "seoul", "manila", "bangkok", "jakarta",
         "malaysia", "cambodia", "myanmar", "pacific", "asia",
+    ],
+    "Lifestyle & New Openings": [
+        "restaurant", "opening", "new opening", "grand opening", "pop-up",
+        "popup", "café", "cafe", "boba", "food", "cuisine", "dining",
+        "hmart", "h-mart", "99 ranch", "grocery", "supermarket",
+        "wellness", "spa", "fitness", "yoga", "travel", "hotel",
+        "bar", "lounge", "bakery", "dessert", "ramen", "sushi",
+        "korean bbq", "bubble tea", "night market", "food hall",
+        "interior", "decor", "home", "living", "lifestyle",
     ],
 }
 
 SOURCE_DEFAULT_CATEGORY = {
     "NBC Asian America":        "Community",
     "South China Morning Post": "Community",
-    "Nikkei Asia":              "Founders",
-    "The SF Standard":          "Founders",
+    "Nikkei Asia":              "Brand & Founder",
+    "The SF Standard":          "Brand & Founder",
     "Channel News Asia":        "Community",
     "NextShark":                "Culture",
     "AsAmNews":                 "Community",
     "The Korea Herald":         "Community",
-    "Character Media":          "Entertainment",
+    "Character Media":          "Culture",
 }
 
 
