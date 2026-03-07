@@ -19,53 +19,51 @@ RSS_FEEDS = {
     "Character Media": "https://charactermedia.com/feed/",
 }
 
-CATEGORIES = [
-    "Business & Founders",
-    "Culture & Community",
-    "Entertainment & K-Pop",
-    "Regional News",
-]
+CATEGORIES = ["Founders", "Culture", "Entertainment", "Community"]
 
-# Keywords map — checked in order, first match wins
+# Checked in order — first match wins
 CATEGORY_KEYWORDS = {
-    "Entertainment & K-Pop": [
+    "Entertainment": [
         "kpop", "k-pop", "bts", "blackpink", "twice", "stray kids", "aespa",
         "k-drama", "kdrama", "webtoon", "anime", "manga", "hallyu", "idol",
         "entertainment", "actor", "actress", "film", "movie", "music",
-        "concert", "album", "debut", "character media", "drama",
+        "concert", "album", "debut", "drama", "celebrity", "award", "oscar",
+        "grammy", "emmy", "streaming", "netflix", "disney", "tv show",
     ],
-    "Business & Founders": [
+    "Founders": [
         "founder", "startup", "venture", "ceo", "funding", "investor",
         "ipo", "acquisition", "business", "entrepreneur", "company",
-        "tech", "silicon valley", "economy", "market",
-        "revenue", "finance", "trade", "gdp", "stock",
+        "tech", "silicon valley", "economy", "market", "revenue",
+        "finance", "trade", "gdp", "stock", "investment", "unicorn",
+        "incubator", "accelerator", "seed round", "series a",
     ],
-    "Culture & Community": [
-        "community", "aapi", "asian american", "culture", "heritage",
-        "festival", "tradition", "food", "boba", "hmart", "h-mart",
-        "99 ranch", "restaurant", "cuisine", "identity", "diaspora",
-        "immigration", "activism", "discrimination", "hate crime",
-        "representation", "museum", "art", "exhibit",
+    "Culture": [
+        "culture", "heritage", "festival", "tradition", "food", "boba",
+        "hmart", "h-mart", "99 ranch", "restaurant", "cuisine", "identity",
+        "diaspora", "art", "exhibit", "museum", "literature", "fashion",
+        "design", "architecture", "photography", "travel", "language",
     ],
-    "Regional News": [
+    "Community": [
+        "community", "aapi", "asian american", "immigration", "activism",
+        "protest", "discrimination", "hate crime", "representation",
+        "policy", "election", "government", "military", "diplomatic",
         "china", "japan", "korea", "taiwan", "hong kong", "singapore",
-        "philippines", "vietnam", "thailand", "indonesia", "malaysia",
-        "india", "cambodia", "myanmar", "pacific", "asia",
+        "philippines", "vietnam", "thailand", "indonesia", "india",
         "beijing", "tokyo", "seoul", "manila", "bangkok", "jakarta",
-        "election", "government", "military", "policy", "diplomatic",
+        "malaysia", "cambodia", "myanmar", "pacific", "asia",
     ],
 }
 
 SOURCE_DEFAULT_CATEGORY = {
-    "NBC Asian America":        "Culture & Community",
-    "South China Morning Post": "Regional News",
-    "Nikkei Asia":              "Business & Founders",
-    "The SF Standard":          "Business & Founders",
-    "Channel News Asia":        "Regional News",
-    "NextShark":                "Culture & Community",
-    "AsAmNews":                 "Culture & Community",
-    "The Korea Herald":         "Regional News",
-    "Character Media":          "Entertainment & K-Pop",
+    "NBC Asian America":        "Community",
+    "South China Morning Post": "Community",
+    "Nikkei Asia":              "Founders",
+    "The SF Standard":          "Founders",
+    "Channel News Asia":        "Community",
+    "NextShark":                "Culture",
+    "AsAmNews":                 "Community",
+    "The Korea Herald":         "Community",
+    "Character Media":          "Entertainment",
 }
 
 
@@ -74,7 +72,7 @@ def assign_category(title: str, summary: str, source: str) -> str:
     for category, kws in CATEGORY_KEYWORDS.items():
         if any(kw in text for kw in kws):
             return category
-    return SOURCE_DEFAULT_CATEGORY.get(source, "Regional News")
+    return SOURCE_DEFAULT_CATEGORY.get(source, "Community")
 
 
 def parse_date(date_str):
@@ -153,7 +151,7 @@ def fetch_articles():
                 search_text = (title + " " + clean_summary).lower()
 
                 if any(word in search_text for word in keywords):
-                    short_summary = (clean_summary[:200] + "...") if len(clean_summary) > 200 else clean_summary
+                    short_summary = (clean_summary[:220] + "...") if len(clean_summary) > 220 else clean_summary
                     published = entry.get("published", "")
                     articles.append({
                         "title": title,
@@ -187,25 +185,17 @@ def generate_pitch():
     title = data.get("title", "")
     summary = data.get("summary", "")
     platform = data.get("platform", "twitter")
-    platform_instructions = {
-        "twitter": "Write a punchy tweet (max 240 chars). Use 2-3 relevant hashtags.",
-        "instagram": "Write an Instagram caption (2-4 sentences). Add 8-10 hashtags at the end.",
-        "linkedin": "Write a professional LinkedIn post (3-4 sentences). Max 3 hashtags.",
+    instructions = {
+        "twitter":   "Punchy tweet, max 240 chars, 2-3 hashtags.",
+        "instagram": "Instagram caption, 2-4 sentences, 8-10 hashtags at end.",
+        "linkedin":  "Professional post, 3-4 sentences, max 3 hashtags.",
     }
-    prompt = f"""You are a social media strategist for Asian American news.
-Article Title: {title}
-Article Summary: {summary}
-Platform: {platform.capitalize()}
-Task: {platform_instructions.get(platform, platform_instructions['twitter'])}
-Write ONLY the post."""
+    prompt = f"Social media strategist for Asian American news.\nTitle: {title}\nSummary: {summary}\nPlatform: {platform.capitalize()}\nTask: {instructions.get(platform, instructions['twitter'])}\nWrite ONLY the post."
     try:
         client = anthropic.Anthropic()
-        message = client.messages.create(
-            model="claude-opus-4-5",
-            max_tokens=300,
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return jsonify({"pitch": message.content[0].text.strip()})
+        msg = client.messages.create(model="claude-opus-4-5", max_tokens=300,
+                                     messages=[{"role": "user", "content": prompt}])
+        return jsonify({"pitch": msg.content[0].text.strip()})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
