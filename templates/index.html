@@ -278,6 +278,18 @@
         to   { opacity: 1; transform: translateY(0); }
     }
 
+    .landing-watermark {
+        font-family: 'Anton', sans-serif;
+        font-size: 11px;
+        letter-spacing: 2.5px;
+        text-transform: uppercase;
+        color: #d8d4cf;
+        text-align: center;
+        margin-top: clamp(32px, 5vh, 56px);
+        user-select: none;
+        animation: heroIn 1.2s 0.5s var(--ease-out-expo) both;
+    }
+
     /* Category card grid */
     .cat-grid {
         display: grid;
@@ -966,6 +978,7 @@
     <p class="hero-logo-sub">Your roundup of business, news, &amp; the new.</p>
 
     <div class="cat-grid" id="cat-grid">
+
         <div class="cat-card loading-shimmer ripple-host" data-cat="Brand & Founder" onclick="enterCategory('Brand & Founder', this)">
             <img class="cat-card-bg" src="" alt="" onerror="this.style.display='none'">
             <div class="cat-card-overlay"></div>
@@ -1022,6 +1035,8 @@
             </div>
         </div>
     </div>
+
+    <p class="landing-watermark">ASIAN FOUNDED</p>
 </div>
 
 <!-- ═══ CATEGORY PAGE ═══ -->
