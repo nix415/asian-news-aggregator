@@ -392,6 +392,17 @@
         transition: color 0.2s;
     }
 
+    .cat-card-desc {
+        font-size: 11px;
+        line-height: 1.5;
+        color: var(--mid);
+        margin-bottom: 8px;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
     .cat-card:hover .cat-card-count { color: var(--text); }
 
     .cat-card-arrow {
@@ -415,10 +426,10 @@
     }
 
     /* Accent top border per category */
-    .cat-card[data-cat="Founders"]::before      { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-founders);z-index:2; }
-    .cat-card[data-cat="Culture"]::before       { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-culture);z-index:2; }
-    .cat-card[data-cat="Entertainment"]::before { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-entertainment);z-index:2; }
-    .cat-card[data-cat="Community"]::before     { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-community);z-index:2; }
+    .cat-card[data-cat="Brand & Founder"]::before        { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-founders);z-index:2; }
+    .cat-card[data-cat="Culture"]::before                { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-culture);z-index:2; }
+    .cat-card[data-cat="Community"]::before              { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-entertainment);z-index:2; }
+    .cat-card[data-cat="Lifestyle & New Openings"]::before { content:''; position:absolute; top:0;left:0;right:0;height:3px;background:var(--cat-community);z-index:2; }
 
     /* Loading shimmer on cards */
     .cat-card.loading-shimmer .cat-card-bg {
@@ -929,18 +940,17 @@
     <p class="hero-logo-sub">Your roundup of business, news, &amp; the new.</p>
 
     <div class="cat-grid" id="cat-grid">
-        <div class="cat-card loading-shimmer ripple-host" data-cat="Founders" onclick="enterCategory('Founders', this)">
+        <div class="cat-card loading-shimmer ripple-host" data-cat="Brand & Founder" onclick="enterCategory('Brand & Founder', this)">
             <img class="cat-card-bg" src="" alt="" onerror="this.style.display='none'">
             <div class="cat-card-overlay"></div>
             <div class="cat-card-body">
                 <span class="cat-card-label">Category</span>
-                <span class="cat-card-name">Founders</span>
-                <span class="cat-card-count" id="cnt-Founders">Loading…</span>
+                <span class="cat-card-name">Brand &amp; Founder</span>
+                <span class="cat-card-desc">Stories behind Asian-owned businesses — beauty, fashion &amp; home goods.</span>
+                <span class="cat-card-count" id="cnt-Brand & Founder">Loading…</span>
             </div>
             <div class="cat-card-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M7 17L17 7M17 7H7M17 7v10"/>
-                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
             </div>
         </div>
 
@@ -950,27 +960,11 @@
             <div class="cat-card-body">
                 <span class="cat-card-label">Category</span>
                 <span class="cat-card-name">Culture</span>
+                <span class="cat-card-desc">Art, music, film, K-pop, and the ideas shaping Asian identity.</span>
                 <span class="cat-card-count" id="cnt-Culture">Loading…</span>
             </div>
             <div class="cat-card-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M7 17L17 7M17 7H7M17 7v10"/>
-                </svg>
-            </div>
-        </div>
-
-        <div class="cat-card loading-shimmer ripple-host" data-cat="Entertainment" onclick="enterCategory('Entertainment', this)">
-            <img class="cat-card-bg" src="" alt="" onerror="this.style.display='none'">
-            <div class="cat-card-overlay"></div>
-            <div class="cat-card-body">
-                <span class="cat-card-label">Category</span>
-                <span class="cat-card-name">Entertainment</span>
-                <span class="cat-card-count" id="cnt-Entertainment">Loading…</span>
-            </div>
-            <div class="cat-card-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M7 17L17 7M17 7H7M17 7v10"/>
-                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
             </div>
         </div>
 
@@ -980,12 +974,25 @@
             <div class="cat-card-body">
                 <span class="cat-card-label">Category</span>
                 <span class="cat-card-name">Community</span>
+                <span class="cat-card-desc">AAPI voices, activism, representation, and regional news from Asia.</span>
                 <span class="cat-card-count" id="cnt-Community">Loading…</span>
             </div>
             <div class="cat-card-arrow">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M7 17L17 7M17 7H7M17 7v10"/>
-                </svg>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+            </div>
+        </div>
+
+        <div class="cat-card loading-shimmer ripple-host" data-cat="Lifestyle & New Openings" onclick="enterCategory('Lifestyle & New Openings', this)">
+            <img class="cat-card-bg" src="" alt="" onerror="this.style.display='none'">
+            <div class="cat-card-overlay"></div>
+            <div class="cat-card-body">
+                <span class="cat-card-label">Category</span>
+                <span class="cat-card-name">Lifestyle &amp; New Openings</span>
+                <span class="cat-card-desc">Restaurants, pop-ups, wellness, travel, and the latest new spots.</span>
+                <span class="cat-card-count" id="cnt-Lifestyle & New Openings">Loading…</span>
+            </div>
+            <div class="cat-card-arrow">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
             </div>
         </div>
     </div>
@@ -1038,8 +1045,8 @@
 
 </div>
 
-<!-- ═══ BOTTOM SEARCH ═══ -->
-<div class="bottom-search">
+<!-- ═══ BOTTOM SEARCH (hidden on landing, shown in category view) ═══ -->
+<div class="bottom-search" id="bottom-search" style="display:none">
     <div class="bottom-search-inner">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -1052,13 +1059,13 @@
 /* ══════════════════════════════════════════════
    DATA & STATE
 ══════════════════════════════════════════════ */
-const CATS = ['Founders','Culture','Entertainment','Community'];
+const CATS = ['Brand & Founder', 'Culture', 'Community', 'Lifestyle & New Openings'];
 
 const catColors = {
-    Founders:      '#8BBFB3',
-    Culture:       '#C4655C',
-    Entertainment: '#9A6478',
-    Community:     '#B5A898',
+    'Brand & Founder':          '#8BBFB3',
+    'Culture':                  '#C4655C',
+    'Community':                '#9A6478',
+    'Lifestyle & New Openings': '#B5A898',
 };
 
 const sourceMeta = {
@@ -1165,8 +1172,9 @@ function enterCategory(cat, cardEl) {
         if (heroImg) { heroBg.src = heroImg.image; heroBg.style.display = 'block'; }
         else heroBg.style.display = 'none';
 
-        // show header
+        // show header + search bar
         document.getElementById('site-header').classList.add('visible');
+        document.getElementById('bottom-search').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'instant' });
 
         // show cat page with animation
@@ -1192,6 +1200,7 @@ function goHome() {
 
     setTimeout(() => {
         catPage.style.display = 'none';
+        document.getElementById('bottom-search').style.display = 'none';
         landing.style.display = 'flex';
         landing.classList.remove('exit');
         currentCat = null;
