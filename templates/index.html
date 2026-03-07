@@ -1451,7 +1451,7 @@ function renderArticles(articles) {
 
         // Social Signal badge — shown only when social_boost is true
         const socialBadge = a.social_boost
-            ? `<span class="social-badge">📈 Trending</span>`
+            ? `<span class="social-badge">${(a.trending_score >= 90) ? '🔴 Reddit Hot' : '📈 Trending'}</span>`
             : '';
 
         const meta     = sourceMeta[a.source] || {};
