@@ -739,9 +739,11 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 8px;
         padding-top: 10px;
         border-top: 1px solid var(--border);
         margin-top: auto;
+        flex-wrap: wrap;
     }
 
     .trending-badge {
@@ -756,6 +758,29 @@
     .trending-badge.warm { color: #c4a042; }
     .trending-badge.cool { color: var(--muted); }
 
+    /* Social Signal badge */
+    .social-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 9px;
+        font-weight: 600;
+        letter-spacing: 0.6px;
+        text-transform: uppercase;
+        color: var(--mid);
+        border: 1px solid var(--border);
+        padding: 3px 7px;
+        background: var(--white);
+        white-space: nowrap;
+        transition: border-color 0.2s, color 0.2s;
+    }
+
+    .article-card:hover .social-badge {
+        border-color: #9A6478;
+        color: #9A6478;
+    }
+
     .view-more {
         font-size: 11px;
         font-weight: 600;
@@ -765,6 +790,7 @@
         text-underline-offset: 2px;
         text-decoration-color: var(--border);
         transition: color 0.15s, text-decoration-color 0.15s;
+        margin-left: auto;
     }
 
     .view-more:hover { color: var(--text); text-decoration-color: var(--text); }
@@ -1281,6 +1307,11 @@ function renderArticles(articles) {
             ? `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>`
             : `<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg>`;
 
+        // Social Signal badge — shown only when social_boost is true
+        const socialBadge = a.social_boost
+            ? `<span class="social-badge">📈 Trending</span>`
+            : '';
+
         const meta     = sourceMeta[a.source] || {};
         const favicon  = meta.url
             ? `<img class="card-favicon" src="${meta.url}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
@@ -1310,6 +1341,7 @@ function renderArticles(articles) {
                 ${a.summary ? `<p class="card-summary">${a.summary}</p>` : ''}
                 <div class="card-footer">
                     <span class="trending-badge ${tClass}">${tIcon}&nbsp;${score}</span>
+                    ${socialBadge}
                     <a href="${a.link}" target="_blank" rel="noopener" class="view-more">View More</a>
                 </div>
             </div>
