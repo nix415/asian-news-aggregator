@@ -116,6 +116,41 @@ def calculate_trending_score(published_str):
         return 30
 
 
+# Keywords that signal high virality on Instagram, TikTok, and Reddit
+# for the Asian Founded audience. Tune this list as trends evolve.
+VIRAL_KEYWORDS = [
+    # Brand / founder moments
+    "founder", "startup", "brand", "launch", "collab", "collaboration",
+    "asian-owned", "asian owned", "small business", "entrepreneur",
+    # Food & lifestyle magnets
+    "boba", "bubble tea", "hmart", "h-mart", "99 ranch", "ramen",
+    "korean bbq", "dim sum", "matcha", "mochi", "night market",
+    # Culture / entertainment drivers
+    "k-pop", "kpop", "bts", "blackpink", "twice", "aespa", "stray kids",
+    "k-drama", "kdrama", "hallyu", "anime", "webtoon",
+    # Social-first topics
+    "viral", "trending", "tiktok", "tik tok", "instagram", "reels",
+    "sold out", "waitlist", "pop-up", "popup", "limited edition",
+    "representation", "first asian", "historic", "record-breaking",
+    # Community energy
+    "aapi", "asian american", "pride", "activist", "movement",
+]
+
+SOCIAL_BOOST_AMOUNT = 40
+
+
+def get_social_boost_score(title: str, summary: str) -> tuple[bool, int]:
+    """
+    Returns (social_boost: bool, bonus: int).
+    Checks title + summary against VIRAL_KEYWORDS.
+    If 1+ match → social_boost=True, bonus=SOCIAL_BOOST_AMOUNT.
+    """
+    text = (title + " " + summary).lower()
+    if any(kw in text for kw in VIRAL_KEYWORDS):
+        return True, SOCIAL_BOOST_AMOUNT
+    return False, 0
+
+
 def extract_image(entry):
     media = entry.get("media_content", [])
     if media:
@@ -160,6 +195,8 @@ def fetch_articles():
                 if any(word in search_text for word in keywords):
                     short_summary = (clean_summary[:220] + "...") if len(clean_summary) > 220 else clean_summary
                     published = entry.get("published", "")
+                    base_score = calculate_trending_score(published)
+                    social_boost, bonus = get_social_boost_score(title, clean_summary)
                     articles.append({
                         "title": title,
                         "summary": short_summary,
@@ -167,7 +204,8 @@ def fetch_articles():
                         "source": source,
                         "published": published,
                         "image": extract_image(entry),
-                        "trending_score": calculate_trending_score(published),
+                        "trending_score": min(base_score + bonus, 100),
+                        "social_boost": social_boost,
                         "category": assign_category(title, clean_summary, source),
                     })
         except Exception as e:
