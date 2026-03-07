@@ -102,7 +102,7 @@ SOURCE_DEFAULT_CATEGORY = {
     "Character Media":          "Culture",
 }
 
-# ── Viral / social signal keywords ───────────────────────────────────────────
+# ── Viral / social signal keywords (static fallback) ─────────────────────────
 VIRAL_KEYWORDS = [
     "founder", "startup", "brand", "launch", "collab", "collaboration",
     "asian-owned", "asian owned", "small business", "entrepreneur",
@@ -116,14 +116,106 @@ VIRAL_KEYWORDS = [
     "aapi", "asian american", "pride", "activist", "movement",
 ]
 
-SOCIAL_BOOST_AMOUNT = 40
+# Subreddits to monitor for live trending AAPI / Asian culture topics
+REDDIT_SUBREDDITS = [
+    "AsianAmerican",
+    "kdrama",
+    "kpop",
+    "asianfood",
+    "entrepreneur",
+    "startups",
+    "AAPI",
+    "AsianBeauty",
+    "japanlife",
+    "korea",
+]
+
+SOCIAL_BOOST_AMOUNT = 40   # bonus for matching static viral keywords
+REDDIT_BOOST_AMOUNT = 35   # bonus for matching live Reddit trending topic
+
+# Module-level cache — Reddit is fetched once per hour, not on every request
+_reddit_trending_keywords: list = []
+_reddit_cache_time: float = 0.0
+REDDIT_CACHE_SECONDS = 3600
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Helpers
-# ─────────────────────────────────────────────────────────────────────────────
+def fetch_reddit_trending_keywords() -> list:
+    """
+    Hits Reddit's free public JSON API (no API key required) to pull the
+    hottest posts from AAPI-relevant subreddits. Extracts meaningful words
+    from post titles as trending keywords.
 
-def assign_category(title: str, summary: str, source: str) -> str:
+    Cached for 1 hour so we never hammer Reddit's servers.
+    """
+    import time
+    global _reddit_trending_keywords, _reddit_cache_time
+
+    now = time.time()
+    if _reddit_trending_keywords and (now - _reddit_cache_time) < REDDIT_CACHE_SECONDS:
+        return _reddit_trending_keywords
+
+    headers  = {"User-Agent": "AsianFounded/1.0 (news aggregator)"}
+    keywords = []
+
+    for sub in REDDIT_SUBREDDITS:
+        try:
+            resp = requests.get(
+                f"https://www.reddit.com/r/{sub}/hot.json?limit=10",
+                headers=headers,
+                timeout=6,
+            )
+            if resp.status_code != 200:
+                continue
+            posts = resp.json().get("data", {}).get("children", [])
+            for post in posts:
+                data  = post.get("data", {})
+                score = data.get("score", 0)
+                if score < 50:          # only posts with real engagement
+                    continue
+                title = data.get("title", "").lower()
+                words = re.findall(r"[a-z][a-z\-']{2,}", title)
+                keywords.extend(words)
+        except Exception as e:
+            print(f"Reddit fetch error for r/{sub}: {e}")
+
+    # Remove generic stop-words so only meaningful terms remain
+    stop_words = {
+        "the","and","for","are","was","that","this","with","have","from",
+        "they","been","what","just","not","but","who","will","all","can",
+        "her","his","him","she","how","its","our","out","one","get","now",
+        "new","more","any","about","after","your","also","like","when",
+    }
+    unique = list({w for w in keywords if w not in stop_words})
+
+    _reddit_trending_keywords = unique
+    _reddit_cache_time        = now
+    print(f"Reddit: cached {len(unique)} trending keywords.")
+    return unique
+
+
+def get_social_boost_score(title: str, summary: str):
+    """
+    Returns (social_boost: bool, bonus: int).
+
+    Stacked scoring:
+      - Matches static VIRAL_KEYWORDS only     → +40
+      - Matches live Reddit trending only      → +35
+      - Matches BOTH (strongest signal)        → +75 (capped)
+    """
+    text            = (title + " " + summary).lower()
+    static_match    = any(kw in text for kw in VIRAL_KEYWORDS)
+    reddit_keywords = fetch_reddit_trending_keywords()
+    reddit_match    = any(kw in text for kw in reddit_keywords)
+
+    if static_match and reddit_match:
+        return True, min(SOCIAL_BOOST_AMOUNT + REDDIT_BOOST_AMOUNT, 75)
+    if reddit_match:
+        return True, REDDIT_BOOST_AMOUNT
+    if static_match:
+        return True, SOCIAL_BOOST_AMOUNT
+    return False, 0
+
+
     text = (title + " " + summary).lower()
     for category, kws in CATEGORY_KEYWORDS.items():
         if any(kw in text for kw in kws):
