@@ -252,6 +252,56 @@
 
     .sort-select:hover { border-color: var(--text); }
 
+    .archive-toggle {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: var(--white);
+        border: 1px solid var(--border);
+        color: var(--mid);
+        padding: 5px 14px;
+        font-family: 'DM Sans', sans-serif;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        cursor: pointer;
+        transition: all 0.15s;
+        white-space: nowrap;
+    }
+
+    .archive-toggle:hover { border-color: var(--text); color: var(--text); }
+
+    .archive-toggle.active {
+        background: var(--text);
+        color: var(--white);
+        border-color: var(--text);
+    }
+
+    /* Archive mode banner shown below filter row */
+    .archive-banner {
+        max-width: 1520px;
+        margin: 0 auto;
+        padding: 8px 2.5rem;
+        font-size: 11px;
+        color: var(--muted);
+        letter-spacing: 0.3px;
+        border-bottom: 1px solid var(--border-lite);
+        display: none;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .archive-banner.visible { display: flex; }
+
+    .archive-banner strong { color: var(--text); font-weight: 600; }
+
+    .archive-dot {
+        width: 6px; height: 6px;
+        background: #9A6478;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
     /* ═══════════════════════════════════════
        LANDING PAGE
     ═══════════════════════════════════════ */
@@ -1000,10 +1050,22 @@
             <option value="Character Media">Character Media</option>
         </select>
         <select id="sort-filter" class="sort-select" onchange="applyFilters()">
+            <option value="popular">⭐ Most Popular</option>
             <option value="trending">↑ Trending</option>
             <option value="newest">Newest</option>
             <option value="oldest">Oldest</option>
         </select>
+        <button id="archive-btn" class="archive-toggle ripple-host" onclick="toggleArchive()" title="Switch between live feed and full archive">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="21 8 21 21 3 21 3 8"/><rect x="1" y="3" width="22" height="5"/><line x1="10" y1="12" x2="14" y2="12"/>
+            </svg>
+            Archive
+        </button>
+    </div>
+    <!-- Archive mode indicator -->
+    <div class="archive-banner" id="archive-banner">
+        <div class="archive-dot"></div>
+        <strong>Archive Mode</strong> — showing all saved articles from the Supabase database, sorted by popularity.
     </div>
 </header>
 
@@ -1160,14 +1222,19 @@ let allArticles     = [];
 let currentCat      = null;
 let activeSource    = 'all';
 let dataLoaded      = false;
+let archiveMode     = false;
 
 /* ══════════════════════════════════════════════
    FETCH
 ══════════════════════════════════════════════ */
-async function loadData() {
+async function loadData(useArchive = false) {
+    const endpoint = useArchive ? '/api/archive' : '/api/articles';
     try {
-        const res = await fetch('/api/articles');
-        allArticles = await res.json();
+        const res = await fetch(endpoint);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        // Supabase archive returns array directly; live also returns array
+        allArticles = Array.isArray(data) ? data : [];
         dataLoaded = true;
         populateCatCards();
     } catch(e) {
@@ -1290,10 +1357,11 @@ function refreshCat() {
     triggerRipple(document.getElementById('refresh-btn'), event);
     document.getElementById('refresh-btn').classList.add('spinning');
 
-    fetch('/api/articles')
+    const endpoint = archiveMode ? '/api/archive' : '/api/articles';
+    fetch(endpoint)
         .then(r => r.json())
         .then(data => {
-            allArticles = data;
+            allArticles = Array.isArray(data) ? data : [];
             dataLoaded = true;
             populateCatCards();
             applyFilters();
@@ -1302,6 +1370,27 @@ function refreshCat() {
         .finally(() => {
             document.getElementById('refresh-btn').classList.remove('spinning');
         });
+}
+
+function toggleArchive() {
+    archiveMode = !archiveMode;
+    const btn    = document.getElementById('archive-btn');
+    const banner = document.getElementById('archive-banner');
+
+    btn.classList.toggle('active', archiveMode);
+    banner.classList.toggle('visible', archiveMode);
+
+    // Reset to Popular sort when entering archive mode
+    if (archiveMode) {
+        document.getElementById('sort-filter').value = 'popular';
+    }
+
+    // Reload data from the appropriate source
+    allArticles = [];
+    dataLoaded  = false;
+    loadData(archiveMode).then(() => {
+        if (currentCat) applyFilters();
+    });
 }
 
 /* ══════════════════════════════════════════════
@@ -1328,10 +1417,11 @@ function applyFilters() {
     if (activeSource !== 'all') list = list.filter(a => a.source === activeSource);
     if (q) list = list.filter(a => (a.title+' '+a.summary+' '+a.source).toLowerCase().includes(q));
 
-    list.sort((a,b) => {
-        if (sort==='trending') return (b.trending_score||0)-(a.trending_score||0);
-        if (sort==='newest')   return new Date(b.published||0)-new Date(a.published||0);
-        if (sort==='oldest')   return new Date(a.published||0)-new Date(b.published||0);
+    list.sort((a, b) => {
+        if (sort === 'popular')  return (b.popularity_score || b.trending_score || 0) - (a.popularity_score || a.trending_score || 0);
+        if (sort === 'trending') return (b.trending_score || 0) - (a.trending_score || 0);
+        if (sort === 'newest')   return new Date(b.published || 0) - new Date(a.published || 0);
+        if (sort === 'oldest')   return new Date(a.published || 0) - new Date(b.published || 0);
         return 0;
     });
 
@@ -1437,7 +1527,7 @@ document.addEventListener('click', e => {
 });
 
 /* Init */
-document.addEventListener('DOMContentLoaded', loadData);
+document.addEventListener('DOMContentLoaded', () => loadData(false));
 
 /* ── Hide header on scroll down, reveal on scroll up ── */
 (function () {
