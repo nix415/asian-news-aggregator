@@ -65,6 +65,12 @@
         pointer-events: all;
     }
 
+    #site-header.scrolled-away {
+        transform: translateY(-100%);
+        opacity: 0;
+        pointer-events: none;
+    }
+
     .header-inner {
         max-width: 1520px;
         margin: 0 auto;
@@ -942,7 +948,7 @@
 <!-- ═══ SHARED HEADER (hidden on landing) ═══ -->
 <header id="site-header">
     <div class="header-inner">
-        <span class="header-tagline">Your roundup of business, news, &amp; the new.</span>
+        <div style="flex:1"></div>
         <div class="logo-text" onclick="goHome()">
             Asian<span class="logo-news">news</span>Founded
         </div>
@@ -1215,6 +1221,7 @@ function enterCategory(cat, cardEl) {
 
         // show header + search bar
         document.getElementById('site-header').classList.add('visible');
+        document.getElementById('site-header').classList.remove('scrolled-away');
         document.getElementById('bottom-search').style.display = 'block';
         window.scrollTo({ top: 0, behavior: 'instant' });
 
@@ -1401,6 +1408,44 @@ document.addEventListener('click', e => {
 
 /* Init */
 document.addEventListener('DOMContentLoaded', loadData);
+
+/* ── Hide header on scroll down, reveal on scroll up ── */
+(function () {
+    let lastY    = 0;
+    let ticking  = false;
+    const THRESHOLD = 60; // px scrolled before hiding kicks in
+
+    window.addEventListener('scroll', () => {
+        if (ticking) return;
+        ticking = true;
+        requestAnimationFrame(() => {
+            const header = document.getElementById('site-header');
+            // Only apply while a category page is active
+            if (!header.classList.contains('visible')) {
+                lastY   = window.scrollY;
+                ticking = false;
+                return;
+            }
+
+            const y    = window.scrollY;
+            const diff = y - lastY;
+
+            if (y < THRESHOLD) {
+                // Near top — always show
+                header.classList.remove('scrolled-away');
+            } else if (diff > 4) {
+                // Scrolling down
+                header.classList.add('scrolled-away');
+            } else if (diff < -4) {
+                // Scrolling up
+                header.classList.remove('scrolled-away');
+            }
+
+            lastY   = y;
+            ticking = false;
+        });
+    }, { passive: true });
+})();
 </script>
 </body>
 </html>
