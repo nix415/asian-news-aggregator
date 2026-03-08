@@ -48,6 +48,12 @@ RSS_FEEDS = {
     "AsAmNews":                 "https://asamnews.com/feed/",
     "The Korea Herald":         "https://www.koreaherald.com/rss/newsAll",
     "Character Media":          "https://charactermedia.com/feed/",
+    "The Japan Times":          "https://www.japantimes.co.jp/feed/",
+    "Rappler":                  "https://www.rappler.com/feed/",
+    "Eater":                    "https://www.eater.com/rss/index.xml",
+    "Hypebeast":                "https://hypebeast.com/feed",
+    "Allkpop":                  "https://www.allkpop.com/feed",
+    "Soompi":                   "https://www.soompi.com/feed",
 }
 
 # ── Categories ────────────────────────────────────────────────────────────────
@@ -102,6 +108,12 @@ SOURCE_DEFAULT_CATEGORY = {
     "AsAmNews":                 "Community",
     "The Korea Herald":         "Community",
     "Character Media":          "Culture",
+    "The Japan Times":          "Community",
+    "Rappler":                  "Community",
+    "Eater":                    "Lifestyle & New Openings",
+    "Hypebeast":                "Culture",
+    "Allkpop":                  "Culture",
+    "Soompi":                   "Culture",
 }
 
 # Subreddits to monitor for live trending AAPI / Asian culture topics
@@ -440,9 +452,14 @@ NEWSAPI_QUERIES = [
     "K-pop OR K-drama OR anime",
     "Asian food OR boba OR ramen OR Korean BBQ",
     "AAPI OR Asian representation",
+    "Asian beauty OR skincare OR K-beauty",
+    "Chinatown OR Koreatown OR Little Tokyo",
+    "Asian hate crime OR Stop Asian Hate",
+    "Asian celebrity OR Asian actor OR Asian filmmaker",
+    "bubble tea OR dim sum OR sushi restaurant",
 ]
 
-NEWSAPI_PAGE_SIZE = 30
+NEWSAPI_PAGE_SIZE = 100
 
 
 def _fetch_newsapi_query(query: str) -> list:
@@ -488,15 +505,12 @@ def fetch_newsapi_popular() -> list:
     for item in raw_items:
         title      = item.get("title") or "No Title"
         link       = item.get("url", "#")
-        if link in seen:
+        if link in seen or title == "[Removed]":
             continue
         seen.add(link)
 
         summary    = item.get("description") or item.get("content") or ""
         clean_summ = re.sub(r"<[^>]+>", "", summary).strip()
-
-        if not AAPI_FILTER_PATTERN.search(title + " " + clean_summ):
-            continue
 
         short_summ = (clean_summ[:220] + "...") if len(clean_summ) > 220 else clean_summ
         published  = item.get("publishedAt", "")
@@ -534,6 +548,8 @@ AAPI_NATIVE_SOURCES = {
     "NextShark",
     "AsAmNews",
     "Character Media",
+    "Allkpop",
+    "Soompi",
 }
 
 AAPI_KEYWORDS = [
@@ -578,7 +594,7 @@ def _fetch_single_feed(source: str, url: str) -> list:
     articles = []
     try:
         feed = feedparser.parse(url)
-        for entry in feed.entries[:30]:
+        for entry in feed.entries[:50]:
             title       = entry.get("title", "No Title")
             summary     = entry.get("summary", entry.get("description", ""))
             clean_summ  = re.sub(r"<[^>]+>", "", summary).strip()
