@@ -1005,15 +1005,21 @@
     .bottom-search input::placeholder { color: var(--muted); }
 
     /* Source fallback colors */
-    .src-nbc   { background:#0057a8; }
-    .src-scmp  { background:#c8102e; }
-    .src-nikkei{ background:#e60012; }
-    .src-sf    { background:#6633cc; }
-    .src-cna   { background:#e4002b; }
-    .src-next  { background:#e91e63; }
-    .src-asam  { background:#009688; }
-    .src-korea { background:#c0392b; }
-    .src-char  { background:#5c6bc0; }
+    .src-nbc    { background:#0057a8; }
+    .src-scmp   { background:#c8102e; }
+    .src-nikkei { background:#e60012; }
+    .src-sf     { background:#6633cc; }
+    .src-cna    { background:#e4002b; }
+    .src-next   { background:#e91e63; }
+    .src-asam   { background:#009688; }
+    .src-korea  { background:#c0392b; }
+    .src-char   { background:#5c6bc0; }
+    .src-japan  { background:#b71c1c; }
+    .src-rappler{ background:#2196f3; }
+    .src-eater  { background:#e53935; }
+    .src-hype   { background:#212121; }
+    .src-akp    { background:#ff5722; }
+    .src-soompi { background:#7b1fa2; }
 
     /* Responsive */
     @media (max-width: 1100px) {
@@ -1062,6 +1068,12 @@
             <option value="AsAmNews">AsAmNews</option>
             <option value="The Korea Herald">The Korea Herald</option>
             <option value="Character Media">Character Media</option>
+            <option value="The Japan Times">The Japan Times</option>
+            <option value="Rappler">Rappler</option>
+            <option value="Eater">Eater</option>
+            <option value="Hypebeast">Hypebeast</option>
+            <option value="Allkpop">Allkpop</option>
+            <option value="Soompi">Soompi</option>
         </select>
         <select id="time-filter" class="source-select" onchange="applyFilters()">
             <option value="all">All Time</option>
@@ -1236,6 +1248,12 @@ const sourceMeta = {
     'AsAmNews':                 {url:'https://asamnews.com/favicon.ico',                name:'AsAmNews',                 cls:'src-asam'   },
     'The Korea Herald':         {url:'https://www.koreaherald.com/favicon.ico',         name:'The Korea Herald',         cls:'src-korea'  },
     'Character Media':          {url:'https://charactermedia.com/favicon.ico',          name:'Character Media',          cls:'src-char'   },
+    'The Japan Times':          {url:'https://www.japantimes.co.jp/favicon.ico',        name:'The Japan Times',          cls:'src-japan'  },
+    'Rappler':                  {url:'https://www.rappler.com/favicon.ico',             name:'Rappler',                  cls:'src-rappler'},
+    'Eater':                    {url:'https://www.eater.com/favicon.ico',               name:'Eater',                    cls:'src-eater'  },
+    'Hypebeast':                {url:'https://hypebeast.com/favicon.ico',               name:'Hypebeast',                cls:'src-hype'   },
+    'Allkpop':                  {url:'https://www.allkpop.com/favicon.ico',             name:'Allkpop',                  cls:'src-akp'    },
+    'Soompi':                   {url:'https://www.soompi.com/favicon.ico',              name:'Soompi',                   cls:'src-soompi' },
 };
 
 let allArticles     = [];
