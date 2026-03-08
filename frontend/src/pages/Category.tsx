@@ -12,6 +12,8 @@ interface Props {
   archiveMode: boolean;
   onToggleArchive: () => void;
   onRefresh: () => void;
+  isBookmarked: (link: string) => boolean;
+  onToggleBookmark: (link: string) => void;
 }
 
 export default function Category({
@@ -20,6 +22,8 @@ export default function Category({
   archiveMode,
   onToggleArchive,
   onRefresh,
+  isBookmarked,
+  onToggleBookmark,
 }: Props) {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
@@ -204,7 +208,13 @@ export default function Category({
           ) : (
             <div className="masonry-grid">
               {filtered.map((article, i) => (
-                <ArticleCard key={article.link} article={article} index={i} />
+                <ArticleCard
+                  key={article.link}
+                  article={article}
+                  index={i}
+                  bookmarked={isBookmarked(article.link)}
+                  onToggleBookmark={onToggleBookmark}
+                />
               ))}
             </div>
           )}

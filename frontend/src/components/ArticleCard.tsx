@@ -6,9 +6,16 @@ import { formatDate, getScoreClass, SCORE_COLORS } from "../lib/utils";
 interface Props {
   article: Article;
   index: number;
+  bookmarked?: boolean;
+  onToggleBookmark?: (link: string) => void;
 }
 
-export default function ArticleCard({ article, index }: Props) {
+export default function ArticleCard({
+  article,
+  index,
+  bookmarked = false,
+  onToggleBookmark,
+}: Props) {
   const [imgError, setImgError] = useState(false);
   const [faviconError, setFaviconError] = useState(false);
 
@@ -98,14 +105,41 @@ export default function ArticleCard({ article, index }: Props) {
             </span>
           )}
 
-          <a
-            href={article.link}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[11px] font-semibold tracking-[0.5px] text-mid underline underline-offset-2 decoration-line transition-colors duration-150 hover:text-primary hover:decoration-primary ml-auto"
-          >
-            View More
-          </a>
+          <div className="flex items-center gap-2 ml-auto">
+            {onToggleBookmark && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onToggleBookmark(article.link);
+                }}
+                className={`p-1 transition-colors duration-150 cursor-pointer bg-transparent border-none ${
+                  bookmarked
+                    ? "text-primary"
+                    : "text-muted hover:text-primary"
+                }`}
+                title={bookmarked ? "Remove bookmark" : "Save for later"}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill={bookmarked ? "currentColor" : "none"}
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+                </svg>
+              </button>
+            )}
+            <a
+              href={article.link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[11px] font-semibold tracking-[0.5px] text-mid underline underline-offset-2 decoration-line transition-colors duration-150 hover:text-primary hover:decoration-primary"
+            >
+              View More
+            </a>
+          </div>
         </div>
       </div>
     </article>
