@@ -128,6 +128,14 @@ REDDIT_SUBREDDITS = [
     "AsianBeauty",
     "japanlife",
     "korea",
+    "anime",
+    "food",
+    "FoodPorn",
+    "streetwear",
+    "SkincareAddiction",
+    "popheads",
+    "movies",
+    "Television",
 ]
 
 # Module-level cache — Reddit is fetched once per hour, not on every request
@@ -201,21 +209,40 @@ def fetch_reddit_scored_keywords() -> dict:
 
 ENGAGEMENT_TRIGGERS = re.compile(
     r'\b(first asian|first aapi|record.breaking|historic|youngest|oldest|'
-    r'largest|biggest|only asian|makes history|breaks record)\b',
+    r'largest|biggest|only asian|makes history|breaks record|'
+    r'first ever|never before|ground.?breaking|trail.?blazing|'
+    r'most popular|best selling|number one|no\.\s*1|top rated|'
+    r'award.winning|grammy|oscar|emmy|golden globe|'
+    r'million|billion|record sales|chart.topping|debut)\b',
     re.IGNORECASE,
 )
 
 SHAREABILITY_TRIGGERS = re.compile(
     r'\b(viral|exclusive|breaking|revealed|shocking|incredible|'
-    r'sold out|waitlist|limited edition|must.see|you need)\b',
+    r'sold out|waitlist|limited edition|must.see|you need|'
+    r'goes viral|blowing up|internet is|fans are|everyone is|'
+    r'you won.t believe|just announced|finally|coming to|'
+    r'new opening|just opened|grand opening|now open|'
+    r'collab|collaboration|drops|collection|launches|'
+    r'behind the scenes|untold story|secret|hidden gem)\b',
+    re.IGNORECASE,
+)
+
+EMOTIONAL_TRIGGERS = re.compile(
+    r'\b(proud|inspiring|heartwarming|emotional|powerful|'
+    r'moving|incredible story|dream come true|against all odds|'
+    r'hate crime|attacked|racist|discrimination|justice|'
+    r'standing up|fighting back|community rallies|solidarity|'
+    r'beautiful|stunning|gorgeous|amazing|unreal|'
+    r'obsessed|iconic|legendary|genius|brilliant)\b',
     re.IGNORECASE,
 )
 
 SOCIAL_TOPIC_SCORES = {
-    "Lifestyle & New Openings": 14,
-    "Culture":                  13,
-    "Brand & Founder":          10,
-    "Community":                8,
+    "Lifestyle & New Openings": 10,
+    "Culture":                  9,
+    "Brand & Founder":          7,
+    "Community":                5,
 }
 
 
@@ -227,67 +254,73 @@ def calculate_engagement_score(
     has_image: bool,
 ) -> tuple:
     """
-    Multi-factor score (0-100) predicting how well an article would perform
-    as a social media post. Returns (popularity_score, social_boost).
+    Multi-factor score (0-100) predicting Instagram engagement potential.
+    Returns (popularity_score, social_boost).
 
     Factors:
-      - Recency          0-20   fresher content performs better
-      - Reddit heat      0-30   topics with real Reddit engagement
-      - Content signals  0-20   milestone language, shareability, questions
-      - Visual potential  0-10   articles with images get 2-3x more engagement
-      - Topic category   0-15   food/kpop/lifestyle outperform on social
-      - Title quality     0-5   optimal length for social sharing
+      - Recency           0-15   fresher content performs better
+      - Reddit heat       0-25   topics with real Reddit engagement
+      - Content signals   0-20   milestone language, shareability, questions
+      - Emotional pull    0-10   pride/outrage/joy drive saves & shares
+      - Visual potential  0-15   Instagram is visual-first
+      - Topic category    0-10   food/kpop/lifestyle outperform on IG
+      - Title quality      0-5   optimal length for captions
     """
     text  = (title + " " + summary).lower()
+    combined = title + " " + summary
     score = 0
 
-    # ── Recency (0-20) ──
+    # ── Recency (0-15) ──
     pub_date = parse_date(published)
     if pub_date:
         now = datetime.now(timezone.utc)
         if pub_date.tzinfo is None:
             pub_date = pub_date.replace(tzinfo=timezone.utc)
         hours_ago = max(0, (now - pub_date).total_seconds() / 3600)
-        if   hours_ago < 3:    score += 20
-        elif hours_ago < 6:    score += 18
-        elif hours_ago < 12:   score += 16
-        elif hours_ago < 24:   score += 14
-        elif hours_ago < 48:   score += 12
-        elif hours_ago < 72:   score += 10
-        elif hours_ago < 168:  score += 8   # 1 week
-        elif hours_ago < 336:  score += 6   # 2 weeks
-        elif hours_ago < 720:  score += 5   # 1 month
-        else:                  score += 3
+        if   hours_ago < 3:    score += 15
+        elif hours_ago < 6:    score += 14
+        elif hours_ago < 12:   score += 13
+        elif hours_ago < 24:   score += 12
+        elif hours_ago < 48:   score += 10
+        elif hours_ago < 72:   score += 9
+        elif hours_ago < 168:  score += 7
+        elif hours_ago < 336:  score += 5
+        elif hours_ago < 720:  score += 4
+        else:                  score += 2
     else:
-        score += 5
+        score += 4
 
-    # ── Reddit heat (0-30) ──
+    # ── Reddit heat (0-25) ──
     reddit = fetch_reddit_scored_keywords()
     if reddit:
         matched_scores = [eng for kw, eng in reddit.items() if kw in text]
         if matched_scores:
             top_engagement = max(matched_scores)
             match_count    = len(matched_scores)
-            heat = min(30, int(
-                min(top_engagement / 500, 1.0) * 20
+            heat = min(25, int(
+                min(top_engagement / 500, 1.0) * 15
                 + min(match_count / 5, 1.0) * 10
             ))
             score += heat
 
     # ── Content signals (0-20) ──
-    if ENGAGEMENT_TRIGGERS.search(title + " " + summary):
+    if ENGAGEMENT_TRIGGERS.search(combined):
         score += 10
-    if SHAREABILITY_TRIGGERS.search(title + " " + summary):
+    if SHAREABILITY_TRIGGERS.search(combined):
         score += 6
     if "?" in title:
         score += 4
 
-    # ── Visual potential (0-10) ──
-    if has_image:
-        score += 10
+    # ── Emotional resonance (0-10) — drives saves & shares on IG ──
+    emotional_matches = len(EMOTIONAL_TRIGGERS.findall(combined))
+    score += min(10, emotional_matches * 4)
 
-    # ── Topic category (0-15) ──
-    score += SOCIAL_TOPIC_SCORES.get(category, 5)
+    # ── Visual potential (0-15) — Instagram is image-first ──
+    if has_image:
+        score += 15
+
+    # ── Topic category (0-10) — food/kpop/lifestyle crush on IG ──
+    score += SOCIAL_TOPIC_SCORES.get(category, 4)
 
     # ── Title quality (0-5) ──
     title_len = len(title)
@@ -457,6 +490,11 @@ NEWSAPI_QUERIES = [
     "Asian hate crime OR Stop Asian Hate",
     "Asian celebrity OR Asian actor OR Asian filmmaker",
     "bubble tea OR dim sum OR sushi restaurant",
+    "viral Asian OR trending Asian",
+    "Asian restaurant opening OR Asian bakery",
+    "Asian fashion OR Asian streetwear OR Asian designer",
+    "Asian TikTok OR Asian viral video",
+    "Asian award winner OR Asian Oscar OR Asian Grammy",
 ]
 
 NEWSAPI_PAGE_SIZE = 100

@@ -90,7 +90,11 @@ export default function ArticleCard({ article, index }: Props) {
 
           {article.social_boost && (
             <span className="inline-flex items-center gap-1 text-[9px] font-semibold tracking-[0.6px] uppercase text-mid border border-line px-1.5 py-0.5 bg-surface whitespace-nowrap">
-              {score >= 75 ? "🔥 High Potential" : "📈 Shareable"}
+              {score >= 80
+                ? "🔥 IG Ready"
+                : score >= 65
+                  ? "📸 Post-Worthy"
+                  : "📈 Shareable"}
             </span>
           )}
 

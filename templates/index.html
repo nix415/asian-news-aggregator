@@ -1512,7 +1512,7 @@ function renderArticles(articles) {
 
         // Social Signal badge — shown only when social_boost is true
         const socialBadge = a.social_boost
-            ? `<span class="social-badge">${(a.popularity_score >= 75) ? '🔥 High Potential' : '📈 Shareable'}</span>`
+            ? `<span class="social-badge">${(a.popularity_score >= 80) ? '🔥 IG Ready' : (a.popularity_score >= 65) ? '📸 Post-Worthy' : '📈 Shareable'}</span>`
             : '';
 
         const meta     = sourceMeta[a.source] || {};
