@@ -14,7 +14,7 @@ import re
 import time
 import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from email.utils import parsedate_to_datetime
 
 import feedparser
@@ -236,13 +236,16 @@ def calculate_engagement_score(
         if pub_date.tzinfo is None:
             pub_date = pub_date.replace(tzinfo=timezone.utc)
         hours_ago = max(0, (now - pub_date).total_seconds() / 3600)
-        if   hours_ago < 3:   score += 20
-        elif hours_ago < 6:   score += 18
-        elif hours_ago < 12:  score += 15
-        elif hours_ago < 24:  score += 12
-        elif hours_ago < 48:  score += 8
-        elif hours_ago < 72:  score += 5
-        else:                 score += 2
+        if   hours_ago < 3:    score += 20
+        elif hours_ago < 6:    score += 18
+        elif hours_ago < 12:   score += 16
+        elif hours_ago < 24:   score += 14
+        elif hours_ago < 48:   score += 12
+        elif hours_ago < 72:   score += 10
+        elif hours_ago < 168:  score += 8   # 1 week
+        elif hours_ago < 336:  score += 6   # 2 weeks
+        elif hours_ago < 720:  score += 5   # 1 month
+        else:                  score += 3
     else:
         score += 5
 
@@ -326,13 +329,16 @@ def calculate_trending_score(published_str: str) -> int:
         if pub_date.tzinfo is None:
             pub_date = pub_date.replace(tzinfo=timezone.utc)
         hours_ago = (now - pub_date).total_seconds() / 3600
-        if hours_ago < 2:   return 98
-        if hours_ago < 6:   return 90
-        if hours_ago < 12:  return 80
-        if hours_ago < 24:  return 70
-        if hours_ago < 48:  return 55
-        if hours_ago < 72:  return 40
-        return max(10, int(30 - hours_ago / 24))
+        if hours_ago < 2:    return 98
+        if hours_ago < 6:    return 90
+        if hours_ago < 12:   return 80
+        if hours_ago < 24:   return 70
+        if hours_ago < 48:   return 60
+        if hours_ago < 72:   return 50
+        if hours_ago < 168:  return 40  # 1 week
+        if hours_ago < 336:  return 32  # 2 weeks
+        if hours_ago < 720:  return 25  # 1 month
+        return max(15, int(25 - hours_ago / 48))
     except Exception:
         return 30
 
@@ -441,6 +447,7 @@ NEWSAPI_PAGE_SIZE = 30
 
 def _fetch_newsapi_query(query: str) -> list:
     """Fetch one NewsAPI query. Safe to call from a thread."""
+    date_from = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
     try:
         resp = requests.get(
             "https://newsapi.org/v2/everything",
@@ -449,6 +456,7 @@ def _fetch_newsapi_query(query: str) -> list:
                 "sortBy":   "popularity",
                 "pageSize": NEWSAPI_PAGE_SIZE,
                 "language": "en",
+                "from":     date_from,
                 "apiKey":   NEWS_API_KEY,
             },
             timeout=10,
