@@ -16,7 +16,7 @@ export default function Landing({ articles, loading }: Props) {
   ).length;
 
   return (
-    <div className="min-h-screen flex flex-col items-center pt-[18vh] pb-[6vh] px-8">
+    <div className="min-h-screen flex flex-col items-center pt-[8vh] pb-[6vh] px-8">
       <h1 className="font-[system-ui,-apple-system,BlinkMacSystemFont,'SF_Pro_Display','Helvetica_Neue',sans-serif] text-[clamp(52px,8vw,110px)] font-bold tracking-[0.08em] leading-[0.95] text-center text-primary animate-hero-in select-none uppercase mb-2">
         ASIAN{" "}
         <span className="gradient-text font-sans text-[clamp(10px,1.4vw,16px)] font-medium tracking-[3px] uppercase mx-1.5 relative -top-[0.15em]">

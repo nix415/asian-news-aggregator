@@ -35,6 +35,7 @@ export default function Category({
   const [search, setSearch] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
+  const [visibleCount, setVisibleCount] = useState(12);
 
   // Scroll-direction header hide/show
   useEffect(() => {
@@ -50,10 +51,11 @@ export default function Category({
     return () => window.removeEventListener("scroll", handler);
   }, []);
 
-  // Scroll to top on mount
+  // Scroll to top and reset visible count on category change
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
-  }, [category]);
+    setVisibleCount(12);
+  }, [category, source, search, timeRange, sort]);
 
   const handleRefresh = () => {
     setRefreshing(true);
@@ -206,17 +208,32 @@ export default function Category({
               No articles found for these filters.
             </div>
           ) : (
-            <div className="masonry-grid">
-              {filtered.map((article, i) => (
-                <ArticleCard
-                  key={article.link}
-                  article={article}
-                  index={i}
-                  bookmarked={isBookmarked(article.link)}
-                  onToggleBookmark={onToggleBookmark}
-                />
-              ))}
-            </div>
+            <>
+              <div className="masonry-grid">
+                {filtered.slice(0, visibleCount).map((article, i) => (
+                  <ArticleCard
+                    key={article.link}
+                    article={article}
+                    index={i}
+                    bookmarked={isBookmarked(article.link)}
+                    onToggleBookmark={onToggleBookmark}
+                  />
+                ))}
+              </div>
+              {visibleCount < filtered.length && (
+                <div className="flex justify-center mt-10">
+                  <button
+                    onClick={() => setVisibleCount((prev) => prev + 12)}
+                    className="flex items-center gap-2 bg-primary text-surface border-none px-8 py-3 text-[12px] font-semibold tracking-[0.8px] uppercase cursor-pointer transition-all duration-150 hover:bg-primary/90 active:scale-[0.97]"
+                  >
+                    Show More
+                    <span className="text-[10px] opacity-70">
+                      ({filtered.length - visibleCount} remaining)
+                    </span>
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
