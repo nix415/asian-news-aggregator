@@ -50,7 +50,7 @@ export default function CategoryCard({
       )}
 
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[rgba(247,245,242,0.2)] via-40% to-[rgba(247,245,242,0.95)]" />
+      <div className="absolute inset-0 overlay-gradient-b" />
 
       {/* Text content */}
       <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">

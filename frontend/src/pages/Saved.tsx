@@ -32,7 +32,7 @@ export default function Saved({
     <div className="min-h-screen">
       {/* Hero */}
       <div className="relative h-[160px] flex items-end px-10 pb-6 border-b border-line max-sm:px-4">
-        <div className="absolute inset-0 bg-gradient-to-r from-[rgba(247,245,242,1)] from-40% to-[rgba(247,245,242,0.85)]" />
+        <div className="absolute inset-0 overlay-gradient-r" />
 
         <button
           className="absolute top-5 left-10 flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.5px] text-muted bg-transparent border-none p-0 cursor-pointer transition-all duration-200 z-10 hover:text-primary hover:-translate-x-[3px] max-sm:left-4"

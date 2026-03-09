@@ -14,7 +14,7 @@ export default function ScrollToTop() {
   return (
     <button
       onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-      className="fixed bottom-6 right-6 z-50 w-10 h-10 bg-primary text-surface border-none rounded-full flex items-center justify-center cursor-pointer shadow-[0_4px_14px_rgba(0,0,0,0.15)] transition-all duration-200 hover:scale-110 hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] active:scale-95 animate-card-in"
+      className="fixed bottom-6 right-6 z-50 w-10 h-10 bg-primary text-surface border-none rounded-full flex items-center justify-center cursor-pointer shadow-[0_4px_14px_rgba(0,0,0,0.15)] transition-all duration-200 hover:scale-110 hover:shadow-[0_6px_20px_rgba(0,0,0,0.2)] active:scale-95 animate-card-in max-sm:bottom-20"
       title="Scroll to top"
     >
       <svg

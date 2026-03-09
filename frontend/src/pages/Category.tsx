@@ -16,6 +16,8 @@ interface Props {
   onRefresh: () => void;
   isBookmarked: (link: string) => boolean;
   onToggleBookmark: (link: string) => void;
+  dark: boolean;
+  onToggleDark: () => void;
 }
 
 export default function Category({
@@ -26,6 +28,8 @@ export default function Category({
   onRefresh,
   isBookmarked,
   onToggleBookmark,
+  dark,
+  onToggleDark,
 }: Props) {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
@@ -128,6 +132,8 @@ export default function Category({
         onSortChange={setSort}
         archiveMode={archiveMode}
         onToggleArchive={onToggleArchive}
+        dark={dark}
+        onToggleDark={onToggleDark}
       />
 
       {/* Hero banner */}
@@ -139,7 +145,7 @@ export default function Category({
             alt=""
           />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-[rgba(247,245,242,0.98)] from-35% to-[rgba(247,245,242,0.6)]" />
+        <div className="absolute inset-0 overlay-gradient-r" />
 
         <button
           className="absolute top-5 left-10 flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.5px] text-muted bg-transparent border-none p-0 cursor-pointer transition-all duration-200 z-10 hover:text-primary hover:-translate-x-[3px] max-sm:left-4"

@@ -15,6 +15,8 @@ interface Props {
   onSortChange: (sort: SortOption) => void;
   archiveMode: boolean;
   onToggleArchive: () => void;
+  dark: boolean;
+  onToggleDark: () => void;
 }
 
 export default function Header({
@@ -30,11 +32,13 @@ export default function Header({
   onSortChange,
   archiveMode,
   onToggleArchive,
+  dark,
+  onToggleDark,
 }: Props) {
   const navigate = useNavigate();
 
   const headerClass = [
-    "sticky top-0 z-50 bg-[rgba(247,245,242,0.94)] backdrop-blur-[14px] border-b border-line",
+    "sticky top-0 z-50 header-blur backdrop-blur-[14px] border-b border-line",
     "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
     visible && !hidden
       ? "translate-y-0 opacity-100 pointer-events-auto"
@@ -57,6 +61,22 @@ export default function Header({
           Founded
         </div>
         <div className="flex justify-end items-center gap-2.5">
+          <button
+            onClick={onToggleDark}
+            className="flex items-center justify-center w-[34px] h-[34px] bg-surface border border-line text-mid cursor-pointer transition-all duration-150 hover:border-primary hover:text-primary active:scale-[0.95]"
+            title={dark ? "Light mode" : "Dark mode"}
+          >
+            {dark ? (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="5" />
+                <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
+              </svg>
+            ) : (
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+              </svg>
+            )}
+          </button>
           <button
             className="flex items-center gap-1.5 bg-primary border border-primary text-surface px-3.5 py-[7px] text-[11px] font-semibold tracking-[0.8px] uppercase cursor-pointer transition-all duration-150 relative overflow-hidden hover:bg-primary/90 active:scale-[0.97]"
             onClick={onRefresh}
