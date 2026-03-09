@@ -159,7 +159,7 @@ def _fetch_single_subreddit(sub: str) -> list:
         resp = requests.get(
             f"https://www.reddit.com/r/{sub}/hot.json?limit=10",
             headers=headers,
-            timeout=6,
+            timeout=4,
         )
         if resp.status_code != 200:
             return results
@@ -514,7 +514,7 @@ def _fetch_newsapi_query(query: str) -> list:
                 "from":     date_from,
                 "apiKey":   NEWS_API_KEY,
             },
-            timeout=10,
+            timeout=5,
         )
         resp.raise_for_status()
         return resp.json().get("articles", [])
@@ -727,6 +727,47 @@ def get_articles():
 
     archive_to_supabase(combined)
     return jsonify(combined)
+
+
+@app.route("/api/articles/cached")
+def get_articles_cached():
+    """
+    Fast endpoint: returns the most recent articles from Supabase without
+    hitting any external APIs. Responds in ~200ms even on cold start.
+    """
+    if not supabase:
+        return jsonify([])
+
+    try:
+        rows = (
+            supabase.table("news_articles")
+            .select("*")
+            .order("popularity_score", desc=True)
+            .limit(300)
+            .execute()
+            .data
+        ) or []
+
+        articles = [
+            {
+                "title":            r.get("title", ""),
+                "summary":          r.get("summary", ""),
+                "link":             r.get("link", "#"),
+                "source":           r.get("source", ""),
+                "published":        r.get("published_at", ""),
+                "image":            r.get("image"),
+                "trending_score":   r.get("popularity_score", 0),
+                "social_boost":     r.get("social_boost", False),
+                "category":         r.get("category", "Community"),
+                "popularity_score": r.get("popularity_score", 0),
+            }
+            for r in rows
+        ]
+
+        return jsonify(articles)
+    except Exception as e:
+        print(f"Cached articles error: {e}")
+        return jsonify([])
 
 
 @app.route("/api/archive")
