@@ -2,8 +2,10 @@ import { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Article, SortOption, TimeRange, CategoryName } from "../types";
 import { TIME_CUTOFFS } from "../lib/utils";
+import { CATEGORIES, CATEGORY_META } from "../lib/constants";
 import Header from "../components/Header";
 import ArticleCard from "../components/ArticleCard";
+import { SkeletonGrid } from "../components/SkeletonCard";
 import SearchBar from "../components/SearchBar";
 
 interface Props {
@@ -166,8 +168,33 @@ export default function Category({
         </div>
       </div>
 
+      {/* Category tabs */}
+      <div className="max-w-[1520px] mx-auto px-10 flex items-center gap-0 border-b border-line max-sm:px-4 overflow-x-auto">
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat}
+            onClick={() => {
+              if (cat !== category) navigate(`/category/${encodeURIComponent(cat)}`);
+            }}
+            className={`relative px-5 py-3.5 text-[11px] font-semibold tracking-[0.5px] cursor-pointer bg-transparent border-none whitespace-nowrap transition-colors duration-150 ${
+              cat === category
+                ? "text-primary"
+                : "text-muted hover:text-primary"
+            }`}
+          >
+            {cat}
+            {cat === category && (
+              <div
+                className="absolute bottom-0 left-5 right-5 h-[2px]"
+                style={{ background: CATEGORY_META[cat].color }}
+              />
+            )}
+          </button>
+        ))}
+      </div>
+
       {/* Stats bar */}
-      <div className="max-w-[1520px] mx-auto px-10 py-4 flex items-center gap-6 border-b border-line max-sm:px-4">
+      <div className="max-w-[1520px] mx-auto px-10 py-3 flex items-center gap-6 border-b border-line max-sm:px-4">
         <div className="flex items-baseline gap-1.5">
           <span className="font-serif text-[22px] text-primary">
             {filtered.length}
@@ -190,13 +217,10 @@ export default function Category({
         </div>
       </div>
 
-      {/* Loading */}
+      {/* Loading skeleton */}
       {loading && (
-        <div className="flex flex-col items-center justify-center py-20 gap-3.5">
-          <div className="w-7 h-7 border-[1.5px] border-line border-t-primary rounded-full animate-spin" />
-          <p className="text-[11px] tracking-[1.2px] uppercase text-muted">
-            Loading articles
-          </p>
+        <div className="max-w-[1520px] mx-auto px-10 pt-7 pb-40 max-sm:px-4">
+          <SkeletonGrid />
         </div>
       )}
 

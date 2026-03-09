@@ -125,6 +125,17 @@ body {
   animation: pulse-dot 2s infinite;
 }
 
+/* Skeleton shimmer for loading placeholders */
+@keyframes skeleton-shimmer {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
+}
+
+.skeleton-shimmer {
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
 /* Masonry grid */
 .masonry-grid {
   columns: 4;

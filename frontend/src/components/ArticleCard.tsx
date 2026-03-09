@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Article } from "../types";
 import { SOURCE_META } from "../lib/constants";
 import { formatDate, getScoreClass, SCORE_COLORS } from "../lib/utils";
+import ArticleModal from "./ArticleModal";
 
 interface Props {
   article: Article;
@@ -18,131 +19,141 @@ export default function ArticleCard({
 }: Props) {
   const [imgError, setImgError] = useState(false);
   const [faviconError, setFaviconError] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
 
   const score = article.popularity_score || 0;
   const scoreClass = getScoreClass(score);
   const meta = SOURCE_META[article.source];
 
   return (
-    <article
-      className="bg-surface border border-line transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:-translate-y-[3px] animate-card-in"
-      style={{ animationDelay: `${Math.min(index * 0.045, 0.7)}s` }}
-    >
-      {/* Image */}
-      {article.image && !imgError && (
-        <div className="w-full overflow-hidden border-b border-line">
-          <img
-            className="w-full block object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04]"
-            src={article.image}
-            alt=""
-            loading="lazy"
-            onError={() => setImgError(true)}
-          />
-        </div>
-      )}
-
-      <div className="p-4 flex flex-col">
-        {/* Meta row */}
-        <div className="flex items-center justify-between gap-1.5 mb-2.5">
-          <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-            {meta && !faviconError ? (
-              <img
-                className="w-[13px] h-[13px] object-contain rounded-sm shrink-0"
-                src={meta.url}
-                alt=""
-                loading="lazy"
-                onError={() => setFaviconError(true)}
-              />
-            ) : (
-              <div
-                className={`w-[13px] h-[13px] rounded-sm flex items-center justify-center text-[7px] font-extrabold text-white shrink-0 ${meta?.cls || "bg-gray-400"}`}
-              >
-                {(article.source || "?")[0]}
-              </div>
-            )}
-            <span className="text-[9px] font-semibold tracking-[0.8px] uppercase text-muted truncate">
-              {meta?.name || article.source}
-            </span>
+    <>
+      <article
+        className="bg-surface border border-line transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:-translate-y-[3px] animate-card-in cursor-pointer"
+        style={{ animationDelay: `${Math.min(index * 0.045, 0.7)}s` }}
+        onClick={() => setModalOpen(true)}
+      >
+        {/* Image */}
+        {article.image && !imgError && (
+          <div className="w-full overflow-hidden border-b border-line">
+            <img
+              className="w-full block object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04]"
+              src={article.image}
+              alt=""
+              loading="lazy"
+              onError={() => setImgError(true)}
+            />
           </div>
-          <span className="text-[9px] font-medium tracking-[0.5px] uppercase text-muted shrink-0">
-            {formatDate(article.published)}
-          </span>
-        </div>
-
-        {/* Title */}
-        <a
-          href={article.link}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="font-serif text-[17px] leading-[1.42] text-primary no-underline block mb-2.5 transition-colors duration-150 hover:text-accent"
-        >
-          {article.title}
-        </a>
-
-        {/* Summary */}
-        {article.summary && (
-          <p className="text-[12.5px] leading-[1.65] text-mid mb-3.5 line-clamp-3">
-            {article.summary}
-          </p>
         )}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-line mt-auto flex-wrap">
-          <span
-            className={`flex items-center gap-1 text-[10px] font-semibold ${SCORE_COLORS[scoreClass]}`}
-          >
-            <ScoreIcon scoreClass={scoreClass} />
-            &nbsp;{score}
+        <div className="p-4 flex flex-col">
+          {/* Meta row */}
+          <div className="flex items-center justify-between gap-1.5 mb-2.5">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+              {meta && !faviconError ? (
+                <img
+                  className="w-[13px] h-[13px] object-contain rounded-sm shrink-0"
+                  src={meta.url}
+                  alt=""
+                  loading="lazy"
+                  onError={() => setFaviconError(true)}
+                />
+              ) : (
+                <div
+                  className={`w-[13px] h-[13px] rounded-sm flex items-center justify-center text-[7px] font-extrabold text-white shrink-0 ${meta?.cls || "bg-gray-400"}`}
+                >
+                  {(article.source || "?")[0]}
+                </div>
+              )}
+              <span className="text-[9px] font-semibold tracking-[0.8px] uppercase text-muted truncate">
+                {meta?.name || article.source}
+              </span>
+            </div>
+            <span className="text-[9px] font-medium tracking-[0.5px] uppercase text-muted shrink-0">
+              {formatDate(article.published)}
+            </span>
+          </div>
+
+          {/* Title */}
+          <span className="font-serif text-[17px] leading-[1.42] text-primary block mb-2.5 transition-colors duration-150 hover:text-accent">
+            {article.title}
           </span>
 
-          {article.social_boost && (
-            <span className="inline-flex items-center gap-1 text-[9px] font-semibold tracking-[0.6px] uppercase text-mid border border-line px-1.5 py-0.5 bg-surface whitespace-nowrap">
-              {score >= 80
-                ? "🔥 IG Ready"
-                : score >= 65
-                  ? "📸 Post-Worthy"
-                  : "📈 Shareable"}
-            </span>
+          {/* Summary */}
+          {article.summary && (
+            <p className="text-[12.5px] leading-[1.65] text-mid mb-3.5 line-clamp-3">
+              {article.summary}
+            </p>
           )}
 
-          <div className="flex items-center gap-2 ml-auto">
-            {onToggleBookmark && (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onToggleBookmark(article.link);
-                }}
-                className={`p-1 transition-colors duration-150 cursor-pointer bg-transparent border-none ${
-                  bookmarked
-                    ? "text-primary"
-                    : "text-muted hover:text-primary"
-                }`}
-                title={bookmarked ? "Remove bookmark" : "Save for later"}
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill={bookmarked ? "currentColor" : "none"}
-                  stroke="currentColor"
-                  strokeWidth="2"
-                >
-                  <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
-                </svg>
-              </button>
-            )}
-            <a
-              href={article.link}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-[11px] font-semibold tracking-[0.5px] text-mid underline underline-offset-2 decoration-line transition-colors duration-150 hover:text-primary hover:decoration-primary"
+          {/* Footer */}
+          <div className="flex items-center justify-between gap-2 pt-2.5 border-t border-line mt-auto flex-wrap">
+            <span
+              className={`flex items-center gap-1 text-[10px] font-semibold ${SCORE_COLORS[scoreClass]}`}
             >
-              View More
-            </a>
+              <ScoreIcon scoreClass={scoreClass} />
+              &nbsp;{score}
+            </span>
+
+            {article.social_boost && (
+              <span className="inline-flex items-center gap-1 text-[9px] font-semibold tracking-[0.6px] uppercase text-mid border border-line px-1.5 py-0.5 bg-surface whitespace-nowrap">
+                {score >= 80
+                  ? "🔥 IG Ready"
+                  : score >= 65
+                    ? "📸 Post-Worthy"
+                    : "📈 Shareable"}
+              </span>
+            )}
+
+            <div className="flex items-center gap-2 ml-auto">
+              {onToggleBookmark && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleBookmark(article.link);
+                  }}
+                  className={`p-1 transition-colors duration-150 cursor-pointer bg-transparent border-none ${
+                    bookmarked
+                      ? "text-primary"
+                      : "text-muted hover:text-primary"
+                  }`}
+                  title={bookmarked ? "Remove bookmark" : "Save for later"}
+                >
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill={bookmarked ? "currentColor" : "none"}
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
+                  </svg>
+                </button>
+              )}
+              <a
+                href={article.link}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-[11px] font-semibold tracking-[0.5px] text-mid underline underline-offset-2 decoration-line transition-colors duration-150 hover:text-primary hover:decoration-primary"
+              >
+                View More
+              </a>
+            </div>
           </div>
         </div>
-      </div>
-    </article>
+      </article>
+
+      {/* Quick-peek modal */}
+      {modalOpen && (
+        <ArticleModal
+          article={article}
+          bookmarked={bookmarked}
+          onToggleBookmark={onToggleBookmark || (() => {})}
+          onClose={() => setModalOpen(false)}
+        />
+      )}
+    </>
   );
 }
 
