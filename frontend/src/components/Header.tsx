@@ -5,8 +5,6 @@ import type { SortOption, TimeRange } from "../types";
 interface Props {
   visible: boolean;
   hidden: boolean;
-  refreshing: boolean;
-  onRefresh: () => void;
   source: string;
   onSourceChange: (source: string) => void;
   timeRange: TimeRange;
@@ -22,8 +20,6 @@ interface Props {
 export default function Header({
   visible,
   hidden,
-  refreshing,
-  onRefresh,
   source,
   onSourceChange,
   timeRange,
@@ -76,23 +72,6 @@ export default function Header({
                 <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
               </svg>
             )}
-          </button>
-          <button
-            className="flex items-center gap-1.5 bg-primary border border-primary text-surface px-3.5 py-[7px] text-[11px] font-semibold tracking-[0.8px] uppercase cursor-pointer transition-all duration-150 relative overflow-hidden hover:bg-primary/90 active:scale-[0.97]"
-            onClick={onRefresh}
-          >
-            <svg
-              width="12"
-              height="12"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              className={refreshing ? "animate-spin" : ""}
-            >
-              <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Refresh
           </button>
         </div>
       </div>

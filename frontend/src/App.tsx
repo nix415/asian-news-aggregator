@@ -12,8 +12,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import MobileNav from "./components/MobileNav";
 
 function AppRoutes() {
-  const { articles, loading, archiveMode, toggleArchive, refresh } =
-    useArticles();
+  const { articles, loading, archiveMode, toggleArchive } = useArticles();
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
   const { dark, toggle: toggleDark } = useDarkMode();
   const { showToast } = useToast();
@@ -49,7 +48,6 @@ function AppRoutes() {
               loading={loading}
               archiveMode={archiveMode}
               onToggleArchive={toggleArchive}
-              onRefresh={refresh}
               isBookmarked={isBookmarked}
               onToggleBookmark={handleToggleBookmark}
               dark={dark}

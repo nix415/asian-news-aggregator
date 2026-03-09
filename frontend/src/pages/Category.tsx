@@ -13,7 +13,6 @@ interface Props {
   loading: boolean;
   archiveMode: boolean;
   onToggleArchive: () => void;
-  onRefresh: () => void;
   isBookmarked: (link: string) => boolean;
   onToggleBookmark: (link: string) => void;
   dark: boolean;
@@ -25,7 +24,6 @@ export default function Category({
   loading,
   archiveMode,
   onToggleArchive,
-  onRefresh,
   isBookmarked,
   onToggleBookmark,
   dark,
@@ -39,7 +37,6 @@ export default function Category({
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
   const [sort, setSort] = useState<SortOption>("popular");
   const [search, setSearch] = useState("");
-  const [refreshing, setRefreshing] = useState(false);
   const [headerHidden, setHeaderHidden] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
 
@@ -62,12 +59,6 @@ export default function Category({
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     setVisibleCount(12);
   }, [category, source, search, timeRange, sort]);
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    onRefresh();
-    setTimeout(() => setRefreshing(false), 800);
-  };
 
   const filtered = useMemo(() => {
     let list = articles.filter(
@@ -122,8 +113,6 @@ export default function Category({
       <Header
         visible={true}
         hidden={headerHidden}
-        refreshing={refreshing}
-        onRefresh={handleRefresh}
         source={source}
         onSourceChange={setSource}
         timeRange={timeRange}

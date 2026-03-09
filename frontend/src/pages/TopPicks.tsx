@@ -110,7 +110,7 @@ export default function TopPicks({
           </div>
         ) : picks.length === 0 ? (
           <div className="p-10 text-center text-[12px] text-muted border border-dashed border-line tracking-[0.5px]">
-            No articles with images found. Try refreshing.
+            No articles with images found. Check back later.
           </div>
         ) : (
           <div className="masonry-grid">
