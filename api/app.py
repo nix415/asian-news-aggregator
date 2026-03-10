@@ -761,7 +761,9 @@ def get_articles_cached():
             for r in rows
         ]
 
-        return jsonify(articles)
+        resp = jsonify(articles)
+        resp.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=120"
+        return resp
     except Exception as e:
         print(f"Cached articles error: {e}")
         return jsonify([])

@@ -40,6 +40,7 @@ export default function ArticleCard({
               src={article.image}
               alt=""
               loading="lazy"
+              decoding="async"
               onError={() => setImgError(true)}
             />
           </div>
@@ -55,6 +56,7 @@ export default function ArticleCard({
                   src={meta.url}
                   alt=""
                   loading="lazy"
+                  decoding="async"
                   onError={() => setFaviconError(true)}
                 />
               ) : (
