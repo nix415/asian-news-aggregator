@@ -124,38 +124,6 @@
         gap: 10px;
     }
 
-    .btn-refresh {
-        display: flex;
-        align-items: center;
-        gap: 5px;
-        background: var(--text);
-        border: 1px solid var(--text);
-        color: var(--white);
-        padding: 7px 14px;
-        font-family: 'DM Sans', sans-serif;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.8px;
-        text-transform: uppercase;
-        cursor: pointer;
-        transition: background 0.18s, transform 0.1s;
-        position: relative;
-        overflow: hidden;
-    }
-
-    .btn-refresh::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        background: rgba(255,255,255,0.15);
-        opacity: 0;
-        transition: opacity 0.2s;
-    }
-
-    .btn-refresh:hover::after { opacity: 1; }
-    .btn-refresh:active { transform: scale(0.97); }
-    .btn-refresh.spinning svg { animation: spin 0.7s linear infinite; }
-
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* Filter row */
@@ -1023,14 +991,7 @@
         <div class="logo-text" onclick="goHome()">
             Asian<span class="logo-news">news</span>Founded
         </div>
-        <div class="header-right">
-            <button id="refresh-btn" class="btn-refresh ripple-host" onclick="refreshCat()">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
-                </svg>
-                Refresh
-            </button>
-        </div>
+        <div class="header-right"></div>
     </div>
     <!-- Filter row -->
     <div class="filter-row" id="filter-row">
@@ -1379,23 +1340,7 @@ function goHome() {
 }
 
 function refreshCat() {
-    if (!currentCat) return;
-    triggerRipple(document.getElementById('refresh-btn'), event);
-    document.getElementById('refresh-btn').classList.add('spinning');
-
-    const endpoint = archiveMode ? '/api/archive' : '/api/articles';
-    fetch(endpoint)
-        .then(r => r.json())
-        .then(data => {
-            allArticles = Array.isArray(data) ? data : [];
-            dataLoaded = true;
-            populateCatCards();
-            applyFilters();
-        })
-        .catch(console.error)
-        .finally(() => {
-            document.getElementById('refresh-btn').classList.remove('spinning');
-        });
+    /* Refresh button removed */
 }
 
 function toggleArchive() {
