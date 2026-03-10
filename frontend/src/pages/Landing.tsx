@@ -92,16 +92,29 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
         </button>
       </div>
 
-      <div className="grid grid-cols-4 gap-5 w-full max-w-[1200px] max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-3">
-        {CATEGORIES.map((cat, i) => (
-          <CategoryCard
-            key={cat}
-            category={cat}
-            articles={buckets[cat]}
-            loading={loading}
-            index={i}
-          />
-        ))}
+      <div className="w-full overflow-x-auto overflow-y-visible pb-2 -mx-2 px-2 scroll-smooth landing-category-scroll">
+        <div className="flex flex-nowrap gap-5 min-h-0 justify-start">
+          <div className="flex-shrink-0 w-[min(280px,75vw)] max-w-[320px]">
+            <CategoryCard
+              key="all"
+              category="All"
+              articles={articles}
+              loading={loading}
+              index={0}
+              isAllArticles
+            />
+          </div>
+          {CATEGORIES.map((cat, i) => (
+            <div key={cat} className="flex-shrink-0 w-[min(280px,75vw)] max-w-[320px]">
+              <CategoryCard
+                category={cat}
+                articles={buckets[cat]}
+                loading={loading}
+                index={i + 1}
+              />
+            </div>
+          ))}
+        </div>
       </div>
 
       <p className="font-display text-[11px] tracking-[2.5px] text-[#d8d4cf] text-center mt-[clamp(32px,5vh,56px)] select-none animate-hero-in-late">

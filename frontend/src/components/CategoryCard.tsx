@@ -1,12 +1,13 @@
 import { useNavigate } from "react-router-dom";
 import type { Article, CategoryName } from "../types";
-import { CATEGORY_META } from "../lib/constants";
+import { CATEGORY_META, ALL_ARTICLES_META } from "../lib/constants";
 
 interface Props {
-  category: CategoryName;
+  category: CategoryName | "All";
   articles: Article[];
   loading: boolean;
   index: number;
+  isAllArticles?: boolean;
 }
 
 export default function CategoryCard({
@@ -14,10 +15,13 @@ export default function CategoryCard({
   articles,
   loading,
   index,
+  isAllArticles = false,
 }: Props) {
   const navigate = useNavigate();
-  const meta = CATEGORY_META[category];
+  const meta = isAllArticles ? ALL_ARTICLES_META : CATEGORY_META[category as CategoryName];
   const imageArticle = articles.find((a) => a.image);
+  const displayName = isAllArticles ? "All Articles" : category;
+  const targetPath = isAllArticles ? "/category/All" : `/category/${encodeURIComponent(category)}`;
 
   return (
     <div
@@ -29,12 +33,12 @@ export default function CategoryCard({
         active:-translate-y-0.5 active:scale-[0.99] active:duration-100
         animate-card-in ${loading ? "animate-shimmer" : ""}`}
       style={{ animationDelay: `${0.15 + index * 0.07}s` }}
-      onClick={() => navigate(`/category/${encodeURIComponent(category)}`)}
+      onClick={() => navigate(targetPath)}
     >
       {/* Accent top bar */}
       <div
         className="absolute top-0 left-0 right-0 h-[3px] z-2"
-        style={{ background: meta.color }}
+        style={{ background: meta?.color ?? ALL_ARTICLES_META.color }}
       />
 
       {/* Background image */}
@@ -58,10 +62,10 @@ export default function CategoryCard({
           Category
         </span>
         <span className="block font-serif text-[clamp(22px,2.2vw,30px)] leading-tight text-primary mb-2">
-          {category}
+          {displayName}
         </span>
         <span className="block text-[11px] leading-relaxed text-mid mb-2 line-clamp-2">
-          {meta.description}
+          {meta?.description ?? ALL_ARTICLES_META.description}
         </span>
         <span className="text-[11px] text-muted">
           {loading ? "Loading…" : `${articles.length} articles`}

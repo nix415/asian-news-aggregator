@@ -2,7 +2,7 @@ import { useMemo, useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import type { Article, SortOption, TimeRange, CategoryName } from "../types";
 import { TIME_CUTOFFS } from "../lib/utils";
-import { CATEGORIES, CATEGORY_META } from "../lib/constants";
+import { CATEGORIES, CATEGORY_META, ALL_ARTICLES_META } from "../lib/constants";
 import Header from "../components/Header";
 import ArticleCard from "../components/ArticleCard";
 import { SkeletonGrid } from "../components/SkeletonCard";
@@ -32,7 +32,9 @@ export default function Category({
 }: Props) {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
-  const category = decodeURIComponent(name || "") as CategoryName;
+  const rawCategory = decodeURIComponent(name || "");
+  const isAll = rawCategory === "All";
+  const category = (isAll ? "Community" : rawCategory) as CategoryName;
 
   const [source, setSource] = useState("all");
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
@@ -59,12 +61,12 @@ export default function Category({
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     setVisibleCount(12);
-  }, [category, source, search, timeRange, sort]);
+  }, [rawCategory, source, search, timeRange, sort]);
 
   const filtered = useMemo(() => {
-    let list = articles.filter(
-      (a) => (a.category || "Community") === category,
-    );
+    let list = isAll
+      ? [...articles]
+      : articles.filter((a) => (a.category || "Community") === category);
 
     if (source !== "all") list = list.filter((a) => a.source === source);
 
@@ -102,7 +104,7 @@ export default function Category({
     });
 
     return list;
-  }, [articles, category, source, search, timeRange, sort]);
+  }, [articles, category, isAll, source, search, timeRange, sort]);
 
   const trendingCount = filtered.filter(
     (a) => (a.popularity_score || 0) >= 70,
@@ -138,7 +140,7 @@ export default function Category({
         <div className="absolute inset-0 overlay-gradient-r" />
 
         <div className="absolute top-5 left-10 z-10 flex flex-col gap-1 max-sm:left-4">
-          <Breadcrumbs items={[{ label: "Home", path: "/" }, { label: category }]} />
+          <Breadcrumbs items={[{ label: "Home", path: "/" }, { label: isAll ? "All Articles" : category }]} />
           <button
             className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.5px] text-muted bg-transparent border-none p-0 cursor-pointer transition-all duration-200 hover:text-primary hover:-translate-x-[3px] w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
             onClick={() => navigate("/")}
@@ -152,30 +154,44 @@ export default function Category({
 
         <div className="relative z-[1] flex items-end justify-between w-full max-w-[1520px] mx-auto">
           <h2 className="font-serif text-[clamp(36px,5vw,64px)] text-primary leading-none">
-            {category}
+            {isAll ? "All Articles" : category}
           </h2>
           <span className="text-[11px] text-muted tracking-[0.5px]">
-            {filtered.length} articles in this category
+            {filtered.length} articles{isAll ? "" : " in this category"}
           </span>
         </div>
       </div>
 
       {/* Category tabs */}
       <div className="max-w-[1520px] mx-auto px-10 flex items-center gap-0 border-b border-line max-sm:px-4 overflow-x-auto">
+        <button
+          onClick={() => !isAll && navigate("/category/All")}
+          className={`relative px-5 py-3.5 text-[11px] font-semibold tracking-[0.5px] cursor-pointer bg-transparent border-none whitespace-nowrap transition-colors duration-150 ${
+            isAll ? "text-primary" : "text-muted hover:text-primary"
+          }`}
+        >
+          All Articles
+          {isAll && (
+            <div
+              className="absolute bottom-0 left-5 right-5 h-[2px]"
+              style={{ background: ALL_ARTICLES_META.color }}
+            />
+          )}
+        </button>
         {CATEGORIES.map((cat) => (
           <button
             key={cat}
             onClick={() => {
-              if (cat !== category) navigate(`/category/${encodeURIComponent(cat)}`);
+              if (cat !== category || isAll) navigate(`/category/${encodeURIComponent(cat)}`);
             }}
             className={`relative px-5 py-3.5 text-[11px] font-semibold tracking-[0.5px] cursor-pointer bg-transparent border-none whitespace-nowrap transition-colors duration-150 ${
-              cat === category
+              !isAll && cat === category
                 ? "text-primary"
                 : "text-muted hover:text-primary"
             }`}
           >
             {cat}
-            {cat === category && (
+            {!isAll && cat === category && (
               <div
                 className="absolute bottom-0 left-5 right-5 h-[2px]"
                 style={{ background: CATEGORY_META[cat].color }}

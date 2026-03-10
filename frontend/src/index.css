@@ -204,6 +204,22 @@ html.dark .header-blur {
   background: rgba(20,20,20,0.94);
 }
 
+/* Landing: horizontal category strip */
+.landing-category-scroll {
+  -webkit-overflow-scrolling: touch;
+}
+.landing-category-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+.landing-category-scroll::-webkit-scrollbar-track {
+  background: var(--color-line);
+  border-radius: 3px;
+}
+.landing-category-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-muted);
+  border-radius: 3px;
+}
+
 /* Masonry grid */
 .masonry-grid {
   columns: 4;

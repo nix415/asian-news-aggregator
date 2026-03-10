@@ -33,6 +33,12 @@ export const CATEGORY_META: Record<
   },
 };
 
+/** Used for the "All Articles" card on the landing page and /category/All view */
+export const ALL_ARTICLES_META = {
+  color: "#6b7280",
+  description: "Browse every article across all categories.",
+};
+
 export const SOURCES: string[] = [
   "NBC Asian America",
   "South China Morning Post",
