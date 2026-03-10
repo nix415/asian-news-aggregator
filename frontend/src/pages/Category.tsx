@@ -206,10 +206,6 @@ export default function Category({
             Trending
           </span>
         </div>
-        <div className="ml-auto flex items-center gap-1.5 text-[10px] font-semibold tracking-[1px] uppercase text-fresh border border-fresh/25 px-2.5 py-1">
-          <div className="w-[5px] h-[5px] bg-fresh rounded-full animate-pulse-dot" />
-          Live
-        </div>
       </div>
 
       {/* Loading skeleton */}
