@@ -6,6 +6,7 @@ import { useDarkMode } from "./hooks/useDarkMode";
 import { ToastProvider, useToast } from "./components/Toast";
 import ScrollToTop from "./components/ScrollToTop";
 import MobileNav from "./components/MobileNav";
+import DesktopNav from "./components/DesktopNav";
 
 const Landing = lazy(() => import("./pages/Landing"));
 const Category = lazy(() => import("./pages/Category"));
@@ -37,8 +38,13 @@ function AppRoutes() {
 
   return (
     <>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
+      <a href="#main-content" className="skip-link">
+        Skip to main content
+      </a>
+      <DesktopNav dark={dark} onToggleDark={toggleDark} />
+      <main id="main-content" className="pt-0 sm:pt-12">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
           <Route
             path="/"
             element={
@@ -87,8 +93,9 @@ function AppRoutes() {
             />
           }
         />
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </main>
       <MobileNav />
     </>
   );

@@ -19,10 +19,10 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
 
   return (
     <div className="min-h-screen flex flex-col items-center pt-[8vh] pb-[6vh] px-8 relative max-sm:pb-[80px]">
-      {/* Dark mode toggle */}
+      {/* Dark mode toggle (mobile only; desktop uses DesktopNav) */}
       <button
         onClick={onToggleDark}
-        className="absolute top-5 right-8 flex items-center justify-center w-9 h-9 bg-surface border border-line text-mid cursor-pointer transition-all duration-150 hover:border-primary hover:text-primary active:scale-[0.95] rounded-full z-10 max-sm:right-4"
+        className="absolute top-5 right-8 flex items-center justify-center w-9 h-9 bg-surface border border-line text-mid cursor-pointer transition-all duration-150 hover:border-primary hover:text-primary active:scale-[0.95] rounded-full z-10 max-sm:right-4 sm:hidden"
         title={dark ? "Light mode" : "Dark mode"}
       >
         {dark ? (

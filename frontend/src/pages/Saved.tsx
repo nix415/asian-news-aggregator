@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import type { Article } from "../types";
 import ArticleCard from "../components/ArticleCard";
+import Breadcrumbs from "../components/Breadcrumbs";
 
 interface Props {
   articles: Article[];
@@ -34,22 +35,18 @@ export default function Saved({
       <div className="relative h-[160px] flex items-end px-10 pb-6 border-b border-line max-sm:px-4">
         <div className="absolute inset-0 overlay-gradient-r" />
 
-        <button
-          className="absolute top-5 left-10 flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.5px] text-muted bg-transparent border-none p-0 cursor-pointer transition-all duration-200 z-10 hover:text-primary hover:-translate-x-[3px] max-sm:left-4"
-          onClick={() => navigate("/")}
-        >
-          <svg
-            width="13"
-            height="13"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
+        <div className="absolute top-5 left-10 z-10 flex flex-col gap-1 max-sm:left-4">
+          <Breadcrumbs items={[{ label: "Home", path: "/" }, { label: "Saved" }]} />
+          <button
+            className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.5px] text-muted bg-transparent border-none p-0 cursor-pointer transition-all duration-200 hover:text-primary hover:-translate-x-[3px] w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
+            onClick={() => navigate("/")}
           >
-            <path d="M19 12H5M12 5l-7 7 7 7" />
-          </svg>
-          Back
-        </button>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <path d="M19 12H5M12 5l-7 7 7 7" />
+            </svg>
+            Back
+          </button>
+        </div>
 
         <div className="relative z-[1] flex items-end justify-between w-full max-w-[1520px] mx-auto">
           <div>
