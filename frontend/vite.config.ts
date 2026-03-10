@@ -9,4 +9,14 @@ export default defineConfig({
       "/api": "http://127.0.0.1:5000",
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom"],
+          "router": ["react-router-dom"],
+        },
+      },
+    },
+  },
 });

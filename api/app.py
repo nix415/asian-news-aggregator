@@ -740,7 +740,7 @@ def get_articles_cached():
             supabase.table("news_articles")
             .select("*")
             .order("popularity_score", desc=True)
-            .limit(300)
+            .limit(150)
             .execute()
             .data
         ) or []

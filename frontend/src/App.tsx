@@ -1,15 +1,24 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useCallback } from "react";
+import { useCallback, lazy, Suspense } from "react";
 import { useArticles } from "./hooks/useArticles";
 import { useBookmarks } from "./hooks/useBookmarks";
 import { useDarkMode } from "./hooks/useDarkMode";
 import { ToastProvider, useToast } from "./components/Toast";
-import Landing from "./pages/Landing";
-import Category from "./pages/Category";
-import TopPicks from "./pages/TopPicks";
-import Saved from "./pages/Saved";
 import ScrollToTop from "./components/ScrollToTop";
 import MobileNav from "./components/MobileNav";
+
+const Landing = lazy(() => import("./pages/Landing"));
+const Category = lazy(() => import("./pages/Category"));
+const TopPicks = lazy(() => import("./pages/TopPicks"));
+const Saved = lazy(() => import("./pages/Saved"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[var(--color-bg)]">
+      <div className="w-8 h-8 border-2 border-[var(--color-line)] border-t-[var(--color-primary)] rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function AppRoutes() {
   const { articles, loading, archiveMode, toggleArchive } = useArticles();
@@ -28,11 +37,12 @@ function AppRoutes() {
 
   return (
     <>
-      <Routes>
-        <Route
-          path="/"
-          element={
-            <Landing
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <Landing
               articles={articles}
               loading={loading}
               dark={dark}
@@ -77,7 +87,8 @@ function AppRoutes() {
             />
           }
         />
-      </Routes>
+        </Routes>
+      </Suspense>
       <MobileNav />
     </>
   );
