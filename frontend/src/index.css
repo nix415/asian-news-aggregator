@@ -204,20 +204,13 @@ html.dark .header-blur {
   background: rgba(20,20,20,0.94);
 }
 
-/* Landing: horizontal category strip */
-.landing-category-scroll {
-  -webkit-overflow-scrolling: touch;
+/* Hide scrollbar but keep scrolling */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-.landing-category-scroll::-webkit-scrollbar {
-  height: 6px;
-}
-.landing-category-scroll::-webkit-scrollbar-track {
-  background: var(--color-line);
-  border-radius: 3px;
-}
-.landing-category-scroll::-webkit-scrollbar-thumb {
-  background: var(--color-muted);
-  border-radius: 3px;
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
 }
 
 /* Masonry grid */

@@ -92,20 +92,48 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
         </button>
       </div>
 
-      <div className="w-full overflow-x-auto overflow-y-visible pb-2 -mx-2 px-2 scroll-smooth landing-category-scroll">
-        <div className="flex flex-nowrap gap-5 min-h-0 justify-start">
-          <div className="flex-shrink-0 w-[min(280px,75vw)] max-w-[320px]">
-            <CategoryCard
-              key="all"
-              category="All"
-              articles={articles}
-              loading={loading}
-              index={0}
-              isAllArticles
+      <div className="w-full max-w-[1200px] overflow-x-auto pb-4 scrollbar-hide">
+        <div className="flex gap-5 w-max max-sm:gap-3">
+          {/* All Articles card */}
+          <div
+            className={`relative cursor-pointer bg-surface border border-line overflow-hidden aspect-[3/4] w-[260px] shrink-0
+              shadow-[0_2px_4px_rgba(0,0,0,0.04),0_8px_20px_rgba(0,0,0,0.08),0_20px_48px_rgba(0,0,0,0.06)]
+              transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]
+              hover:-translate-y-2 hover:scale-[1.015]
+              hover:shadow-[0_4px_8px_rgba(0,0,0,0.05),0_20px_48px_rgba(0,0,0,0.14),0_40px_80px_rgba(0,0,0,0.08)]
+              active:-translate-y-0.5 active:scale-[0.99] active:duration-100
+              animate-card-in max-sm:w-[200px]`}
+            style={{ animationDelay: "0.15s" }}
+            onClick={() => navigate(`/category/${encodeURIComponent(CATEGORIES[0])}`)}
+          >
+            <div
+              className="absolute top-0 left-0 right-0 h-[3px] z-2"
+              style={{ background: "linear-gradient(90deg, #8BBFB3, #C4655C, #9A6478, #B5A898)" }}
             />
+            <div className="absolute inset-0 overlay-gradient-b" />
+            <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
+              <span className="block text-[9px] font-bold tracking-[2px] uppercase text-muted mb-1.5">
+                Browse
+              </span>
+              <span className="block font-serif text-[clamp(22px,2.2vw,30px)] leading-tight text-primary mb-2">
+                All Articles
+              </span>
+              <span className="block text-[11px] leading-relaxed text-mid mb-2 line-clamp-2">
+                Every story across all categories in one place.
+              </span>
+              <span className="text-[11px] text-muted">
+                {loading ? "Loading…" : `${articles.length} articles`}
+              </span>
+            </div>
+            <div className="absolute bottom-[22px] right-5 flex items-center justify-center w-7 h-7 border border-line bg-white/80 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M7 17L17 7M17 7H7M17 7v10" />
+              </svg>
+            </div>
           </div>
+
           {CATEGORIES.map((cat, i) => (
-            <div key={cat} className="flex-shrink-0 w-[min(280px,75vw)] max-w-[320px]">
+            <div key={cat} className="w-[260px] shrink-0 max-sm:w-[200px]">
               <CategoryCard
                 category={cat}
                 articles={buckets[cat]}
