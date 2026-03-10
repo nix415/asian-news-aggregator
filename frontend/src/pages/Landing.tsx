@@ -104,7 +104,7 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
               active:-translate-y-0.5 active:scale-[0.99] active:duration-100
               animate-card-in max-sm:w-[200px]`}
             style={{ animationDelay: "0.15s" }}
-            onClick={() => navigate(`/category/${encodeURIComponent(CATEGORIES[0])}`)}
+            onClick={() => navigate("/category/All")}
           >
             <div
               className="absolute top-0 left-0 right-0 h-[3px] z-2"
