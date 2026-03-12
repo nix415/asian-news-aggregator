@@ -350,12 +350,17 @@
 
     /* Category card grid */
     .cat-grid {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        display: flex;
+        flex-direction: row;
         gap: 20px;
         width: 100%;
         max-width: 1200px;
+        overflow-x: auto;
+        padding-bottom: 12px;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
     }
+    .cat-grid::-webkit-scrollbar { display: none; }
 
     /* Individual category card */
     .cat-card {
@@ -365,6 +370,7 @@
         border: 1px solid var(--border);
         overflow: hidden;
         aspect-ratio: 3 / 4;
+        flex: 0 0 260px;
         box-shadow:
             0 2px 4px rgba(0,0,0,0.04),
             0 8px 20px rgba(0,0,0,0.08),
@@ -968,11 +974,11 @@
 
     /* Responsive */
     @media (max-width: 1100px) {
-        .cat-grid { grid-template-columns: repeat(2, 1fr); }
         .masonry-grid { columns: 2; }
     }
     @media (max-width: 640px) {
-        .cat-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+        .cat-card { flex: 0 0 200px; }
+        .cat-grid { gap: 12px; }
         .masonry-grid { columns: 1; }
         .header-tagline { display: none; }
         .header-inner, .masonry-wrap, .cat-stats, .filter-row { padding-left: 1rem; padding-right: 1rem; }
@@ -1045,6 +1051,22 @@
     <p class="hero-logo-sub">Your roundup of business, news, &amp; the new.</p>
 
     <div class="cat-grid" id="cat-grid">
+
+        <!-- All Articles card -->
+        <div class="cat-card ripple-host" data-cat="__ALL__" onclick="enterAllArticles(this)">
+            <div style="position:absolute;inset:0;background:linear-gradient(160deg,#1a1a2e 0%,#16213e 50%,#0f3460 100%);z-index:0"></div>
+            <div style="position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#8BBFB3,#C4655C,#9A6478,#B5A898);z-index:2"></div>
+            <div class="cat-card-overlay" style="background:linear-gradient(to top,rgba(0,0,0,0.7) 0%,rgba(0,0,0,0.1) 60%,transparent 100%)"></div>
+            <div class="cat-card-body" style="z-index:3">
+                <span class="cat-card-label" style="color:rgba(255,255,255,0.6)">Browse</span>
+                <span class="cat-card-name" style="color:#fff">All Articles</span>
+                <span class="cat-card-desc" style="color:rgba(255,255,255,0.75)">Every story across all categories in one place.</span>
+                <span class="cat-card-count" id="cnt-__ALL__" style="color:rgba(255,255,255,0.55)">Loading…</span>
+            </div>
+            <div class="cat-card-arrow" style="z-index:3">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+            </div>
+        </div>
 
         <div class="cat-card loading-shimmer ripple-host" data-cat="Brand & Founder" onclick="enterCategory('Brand & Founder', this)">
             <img class="cat-card-bg" src="" alt="" onerror="this.style.display='none'">
@@ -1233,6 +1255,10 @@ function populateCatCards() {
         (buckets[c] || buckets['Community']).push(a);
     });
 
+    // Update "All Articles" count
+    const allCountEl = document.getElementById('cnt-__ALL__');
+    if (allCountEl) allCountEl.textContent = allArticles.length + ' articles';
+
     CATS.forEach(cat => {
         const cards = buckets[cat];
         const countEl = document.getElementById('cnt-' + cat);
@@ -1257,6 +1283,55 @@ function populateCatCards() {
 /* ══════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════ */
+function enterAllArticles(cardEl) {
+    triggerRipple(cardEl, event);
+
+    currentCat = '__ALL__';
+    activeSource = 'all';
+    const sourceDrop = document.getElementById('source-filter');
+    if (sourceDrop) sourceDrop.value = 'all';
+
+    const landing = document.getElementById('landing');
+    landing.classList.add('exit');
+
+    setTimeout(() => {
+        landing.style.display = 'none';
+        document.getElementById('cat-page-title').textContent = 'All Articles';
+        document.getElementById('site-header').classList.add('visible');
+        document.getElementById('site-header').classList.remove('scrolled-away');
+        document.getElementById('bottom-search').style.display = 'block';
+        window.scrollTo({ top: 0, behavior: 'instant' });
+
+        const catPage = document.getElementById('cat-page');
+        catPage.style.display = 'block';
+
+        if (!dataLoaded) {
+            document.getElementById('page-loading').classList.add('active');
+            document.getElementById('cat-stat-count').textContent = '—';
+            document.getElementById('cat-stat-hot').textContent   = '—';
+            document.getElementById('cat-page-meta').textContent  = 'Loading articles…';
+            document.getElementById('cat-hero-bg').style.display  = 'none';
+            document.getElementById('masonry-grid').innerHTML     = '';
+            requestAnimationFrame(() => requestAnimationFrame(() => catPage.classList.add('visible')));
+            return;
+        }
+
+        document.getElementById('cat-stat-count').textContent = allArticles.length;
+        document.getElementById('cat-stat-hot').textContent   = allArticles.filter(a => (a.popularity_score || 0) >= 70).length;
+        document.getElementById('cat-page-meta').textContent  = allArticles.length + ' articles across all categories';
+
+        const heroImg = allArticles.find(a => a.image);
+        const heroBg  = document.getElementById('cat-hero-bg');
+        if (heroImg) { heroBg.src = heroImg.image; heroBg.style.display = 'block'; }
+        else heroBg.style.display = 'none';
+
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+            catPage.classList.add('visible');
+            applyFilters();
+        }));
+    }, 380);
+}
+
 function enterCategory(cat, cardEl) {
     triggerRipple(cardEl, event);
 
@@ -1384,7 +1459,9 @@ function applyFilters() {
     const sort   = document.getElementById('sort-filter').value;
     const range  = document.getElementById('time-filter').value;
 
-    let list = allArticles.filter(a => (a.category || 'Community') === currentCat);
+    let list = currentCat === '__ALL__'
+        ? allArticles.slice()
+        : allArticles.filter(a => (a.category || 'Community') === currentCat);
 
     if (activeSource !== 'all') list = list.filter(a => a.source === activeSource);
     if (q) list = list.filter(a => (a.title+' '+a.summary+' '+a.source).toLowerCase().includes(q));
