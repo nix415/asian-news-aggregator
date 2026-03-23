@@ -20,7 +20,7 @@ from email.utils import parsedate_to_datetime
 
 import feedparser
 import anthropic
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, make_response, request
 from supabase import create_client, Client
 
 try:
@@ -43,6 +43,7 @@ else:
 # ── API keys ──────────────────────────────────────────────────────────────────
 NEWS_API_KEY: str = os.environ.get("NEWS_API_KEY", "")
 YOUTUBE_API_KEY: str = os.environ.get("YOUTUBE_API_KEY", "")
+CRON_SECRET: str = os.environ.get("CRON_SECRET", "")
 
 # ── RSS feeds ─────────────────────────────────────────────────────────────────
 RSS_FEEDS = {
@@ -1019,8 +1020,8 @@ def get_articles_cached():
     """
     Fast endpoint: returns the most recent articles from Supabase without
     hitting any external APIs. Responds in ~200ms even on cold start.
-    The frontend loads this first for instant rendering, then fetches
-    /api/articles in the background for fresh data.
+    Edge-cached by Vercel CDN for 5 min, serves stale up to 1 hour while
+    revalidating in the background.
     """
     if not supabase:
         return jsonify([])
@@ -1051,7 +1052,9 @@ def get_articles_cached():
             for r in rows
         ]
 
-        return jsonify(articles)
+        resp = make_response(jsonify(articles))
+        resp.headers["Cache-Control"] = "s-maxage=300, stale-while-revalidate=3600"
+        return resp
     except Exception as e:
         print(f"Cached articles error: {e}")
         return jsonify([])
@@ -1103,6 +1106,43 @@ def get_archive():
         ]
 
         return jsonify(articles)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/cron/refresh")
+def cron_refresh():
+    """
+    Background refresh endpoint — called by a cron job (Vercel cron or
+    external scheduler like cron-job.org) to keep Supabase data fresh.
+    Users never hit this; it runs in the background on a schedule.
+    Protected by CRON_SECRET to prevent abuse.
+    """
+    auth = request.headers.get("Authorization", "")
+    secret = request.args.get("secret", "")
+    if CRON_SECRET and auth != f"Bearer {CRON_SECRET}" and secret != CRON_SECRET:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            rss_future = executor.submit(fetch_rss_articles)
+            news_future = executor.submit(fetch_newsapi_popular)
+            rss_articles = rss_future.result()
+            popular_articles = news_future.result()
+
+        seen, combined = set(), []
+        for a in rss_articles + popular_articles:
+            if a["link"] not in seen:
+                seen.add(a["link"])
+                combined.append(a)
+
+        archive_to_supabase(combined)
+        return jsonify({
+            "status": "ok",
+            "articles_refreshed": len(combined),
+            "rss_count": len(rss_articles),
+            "newsapi_count": len(popular_articles),
+        })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 

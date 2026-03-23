@@ -1,8 +1,34 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import type { Article } from "../types";
 
+const LOCAL_STORAGE_KEY = "anf-articles-cache";
+const LOCAL_STORAGE_TS_KEY = "anf-articles-cache-ts";
+const LOCAL_CACHE_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
+
+function readLocalCache(): Article[] | null {
+  try {
+    const ts = localStorage.getItem(LOCAL_STORAGE_TS_KEY);
+    if (!ts || Date.now() - Number(ts) > LOCAL_CACHE_MAX_AGE_MS) return null;
+    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw);
+    return Array.isArray(data) && data.length > 0 ? data : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeLocalCache(articles: Article[]) {
+  try {
+    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(articles));
+    localStorage.setItem(LOCAL_STORAGE_TS_KEY, String(Date.now()));
+  } catch {
+    // localStorage full or unavailable
+  }
+}
+
 export function useArticles() {
-  const [articles, setArticles] = useState<Article[]>([]);
+  const [articles, setArticles] = useState<Article[]>(() => readLocalCache() ?? []);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -17,6 +43,7 @@ export function useArticles() {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
         setArticles(data);
+        writeLocalCache(data);
       }
     } catch (e) {
       if (!hasCached.current) {
@@ -39,26 +66,27 @@ export function useArticles() {
         return;
       }
 
+      const localData = readLocalCache();
+      if (localData) {
+        setArticles(localData);
+        hasCached.current = true;
+      }
+
       try {
         const res = await fetch("/api/articles/cached");
         if (res.ok) {
           const data = await res.json();
           if (!cancelled && Array.isArray(data) && data.length > 0) {
             setArticles(data);
+            writeLocalCache(data);
             hasCached.current = true;
           }
         }
       } catch {
-        // cached fetch failed, will fall through to live
+        // cached fetch failed; localStorage data (if any) is already rendered
       }
 
       if (!cancelled) setLoading(false);
-
-      if (!cancelled) {
-        setRefreshing(true);
-        await fetchLive(false);
-        if (!cancelled) setRefreshing(false);
-      }
     }
 
     load();
