@@ -7,6 +7,7 @@ Environment variables required (set in Vercel dashboard or .env):
   SUPABASE_URL       — e.g. https://xxxx.supabase.co
   SUPABASE_KEY       — anon/service-role key from your Supabase project settings
   NEWS_API_KEY       — from newsapi.org (free tier works)
+  YOUTUBE_API_KEY    — from Google Cloud Console (free tier, 10k units/day)
 """
 
 import os
@@ -22,6 +23,11 @@ import anthropic
 from flask import Flask, jsonify, request
 from supabase import create_client, Client
 
+try:
+    from pytrends.request import TrendReq
+except ImportError:
+    TrendReq = None
+
 app = Flask(__name__)
 
 # ── Supabase client ───────────────────────────────────────────────────────────
@@ -34,8 +40,9 @@ if SUPABASE_URL and SUPABASE_KEY:
 else:
     print("WARNING: SUPABASE_URL / SUPABASE_KEY not set — archiving disabled.")
 
-# ── NewsAPI key ───────────────────────────────────────────────────────────────
+# ── API keys ──────────────────────────────────────────────────────────────────
 NEWS_API_KEY: str = os.environ.get("NEWS_API_KEY", "")
+YOUTUBE_API_KEY: str = os.environ.get("YOUTUBE_API_KEY", "")
 
 # ── RSS feeds ─────────────────────────────────────────────────────────────────
 RSS_FEEDS = {
@@ -136,6 +143,15 @@ REDDIT_SUBREDDITS = [
     "popheads",
     "movies",
     "Television",
+    "BollywoodNews",
+    "Philippines",
+    "Vietnam",
+    "China",
+    "india",
+    "Taiwan",
+    "ABCDesis",
+    "asianparentstories",
+    "Bangtan",
 ]
 
 # Module-level cache — Reddit is fetched once per hour, not on every request
@@ -205,6 +221,272 @@ def fetch_reddit_scored_keywords() -> dict:
     return scored
 
 
+# ── Google Trends engagement ─────────────────────────────────────────────────
+
+_GTRENDS_SEED_TERMS = [
+    "Asian American", "K-pop", "Korean food", "anime",
+    "boba tea", "Asian beauty", "K-drama",
+]
+
+_gtrends_scored_keywords: dict = {}
+_gtrends_cache_time: float = 0.0
+GTRENDS_CACHE_SECONDS = 3600
+
+
+def fetch_google_trends_keywords() -> dict:
+    """
+    Returns {keyword: trend_score} from Google Trends related queries.
+    Uses pytrends to find rising queries related to AAPI seed terms.
+    Cached for 1 hour. Gracefully returns empty dict on failure.
+    """
+    global _gtrends_scored_keywords, _gtrends_cache_time
+
+    now = time.time()
+    if _gtrends_scored_keywords and (now - _gtrends_cache_time) < GTRENDS_CACHE_SECONDS:
+        return _gtrends_scored_keywords
+
+    if TrendReq is None:
+        print("pytrends not installed — skipping Google Trends.")
+        return {}
+
+    scored: dict = {}
+    try:
+        pytrends = TrendReq(hl="en-US", tz=360, timeout=(4, 8))
+        for term in _GTRENDS_SEED_TERMS:
+            try:
+                pytrends.build_payload([term], timeframe="now 7-d", geo="US")
+                related = pytrends.related_queries()
+                rising = related.get(term, {}).get("rising")
+                if rising is not None and not rising.empty:
+                    for _, row in rising.iterrows():
+                        query = str(row.get("query", "")).lower()
+                        value = row.get("value", 0)
+                        if isinstance(value, str) and value.replace(",", "").isdigit():
+                            value = int(value.replace(",", ""))
+                        elif isinstance(value, str):
+                            value = 500
+                        words = re.findall(r"[a-z][a-z\-']{2,}", query)
+                        for w in words:
+                            if w not in _REDDIT_STOP_WORDS:
+                                scored[w] = max(scored.get(w, 0), int(value))
+            except Exception as e:
+                print(f"Google Trends error for '{term}': {e}")
+                continue
+    except Exception as e:
+        print(f"Google Trends init error: {e}")
+
+    _gtrends_scored_keywords = scored
+    _gtrends_cache_time = now
+    print(f"Google Trends: cached {len(scored)} scored keywords.")
+    return scored
+
+
+# ── YouTube Data API engagement ──────────────────────────────────────────────
+
+_YOUTUBE_SEARCH_QUERIES = [
+    "Asian American news",
+    "K-pop trending",
+    "Korean food viral",
+    "anime trending",
+    "Asian beauty skincare",
+    "boba bubble tea",
+    "Asian restaurant opening",
+    "Asian celebrity",
+]
+
+_youtube_scored_keywords: dict = {}
+_youtube_cache_time: float = 0.0
+YOUTUBE_CACHE_SECONDS = 3600
+
+
+def _fetch_youtube_query(query: str) -> list:
+    """Fetch (keyword, engagement_score) pairs from one YouTube search."""
+    published_after = (datetime.now(timezone.utc) - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    results = []
+    try:
+        search_resp = requests.get(
+            "https://www.googleapis.com/youtube/v3/search",
+            params={
+                "part": "snippet",
+                "type": "video",
+                "q": query,
+                "order": "viewCount",
+                "publishedAfter": published_after,
+                "maxResults": 10,
+                "relevanceLanguage": "en",
+                "key": YOUTUBE_API_KEY,
+            },
+            timeout=5,
+        )
+        if search_resp.status_code != 200:
+            return results
+
+        items = search_resp.json().get("items", [])
+        video_ids = [it["id"]["videoId"] for it in items if it.get("id", {}).get("videoId")]
+        if not video_ids:
+            return results
+
+        stats_resp = requests.get(
+            "https://www.googleapis.com/youtube/v3/videos",
+            params={
+                "part": "statistics",
+                "id": ",".join(video_ids),
+                "key": YOUTUBE_API_KEY,
+            },
+            timeout=5,
+        )
+        if stats_resp.status_code != 200:
+            return results
+
+        stats_map = {}
+        for v in stats_resp.json().get("items", []):
+            s = v.get("statistics", {})
+            stats_map[v["id"]] = int(s.get("viewCount", 0)) + int(s.get("likeCount", 0)) * 5
+
+        for it in items:
+            vid = it.get("id", {}).get("videoId")
+            engagement = stats_map.get(vid, 0)
+            if engagement < 1000:
+                continue
+            title = it.get("snippet", {}).get("title", "").lower()
+            words = re.findall(r"[a-z][a-z\-']{2,}", title)
+            for w in words:
+                results.append((w, engagement))
+    except Exception as e:
+        print(f"YouTube fetch error for '{query}': {e}")
+    return results
+
+
+def fetch_youtube_trending_keywords() -> dict:
+    """
+    Returns {keyword: max_engagement_score} from trending YouTube videos.
+    Cached for 1 hour. Gracefully skips if YOUTUBE_API_KEY not set.
+    """
+    global _youtube_scored_keywords, _youtube_cache_time
+
+    now = time.time()
+    if _youtube_scored_keywords and (now - _youtube_cache_time) < YOUTUBE_CACHE_SECONDS:
+        return _youtube_scored_keywords
+
+    if not YOUTUBE_API_KEY:
+        print("YOUTUBE_API_KEY not set — skipping YouTube fetch.")
+        return {}
+
+    scored: dict = {}
+    with ThreadPoolExecutor(max_workers=len(_YOUTUBE_SEARCH_QUERIES)) as executor:
+        futures = [executor.submit(_fetch_youtube_query, q) for q in _YOUTUBE_SEARCH_QUERIES]
+        for future in as_completed(futures):
+            for word, engagement in future.result():
+                if word not in _REDDIT_STOP_WORDS:
+                    scored[word] = max(scored.get(word, 0), engagement)
+
+    _youtube_scored_keywords = scored
+    _youtube_cache_time = now
+    print(f"YouTube: cached {len(scored)} scored keywords.")
+    return scored
+
+
+# ── Wikipedia Pageviews engagement ───────────────────────────────────────────
+
+_WIKIPEDIA_AAPI_PAGES = [
+    "Asian_Americans", "K-pop", "Korean_cuisine", "Anime",
+    "Boba_tea", "BTS", "Blackpink", "Ramen", "Sushi",
+    "Dim_sum", "Chinatown", "Bollywood", "Manga",
+    "K-beauty", "Hallyu", "Stray_Kids", "Aespa",
+    "Twice_(group)", "NewJeans", "Squid_Game",
+    "Hmart", "Asian_American_and_Pacific_Islander_Heritage_Month",
+]
+
+_wikipedia_scored_keywords: dict = {}
+_wikipedia_cache_time: float = 0.0
+WIKIPEDIA_CACHE_SECONDS = 3600
+
+_WIKI_HEADERS = {"User-Agent": "AsianFounded/1.0 (news-aggregator; contact: asianfounded)"}
+
+
+def fetch_wikipedia_trending_keywords() -> dict:
+    """
+    Returns {keyword: pageview_score} from Wikipedia pageview spikes.
+    Checks the most-viewed articles on English Wikipedia for AAPI topics,
+    plus monitors a curated list of AAPI pages for view spikes.
+    Cached for 1 hour.
+    """
+    global _wikipedia_scored_keywords, _wikipedia_cache_time
+
+    now = time.time()
+    if _wikipedia_scored_keywords and (now - _wikipedia_cache_time) < WIKIPEDIA_CACHE_SECONDS:
+        return _wikipedia_scored_keywords
+
+    scored: dict = {}
+    yesterday = (datetime.now(timezone.utc) - timedelta(days=1))
+    date_str = yesterday.strftime("%Y/%m/%d")
+
+    try:
+        resp = requests.get(
+            f"https://wikimedia.org/api/rest_v1/metrics/pageviews/top/en.wikipedia/all-access/{date_str}",
+            headers=_WIKI_HEADERS,
+            timeout=5,
+        )
+        if resp.status_code == 200:
+            articles = resp.json().get("items", [{}])[0].get("articles", [])
+            aapi_filter = re.compile(
+                r'(asian|korean|japanese|chinese|filipino|vietnamese|thai|indian|'
+                r'k.pop|anime|manga|bollywood|ramen|sushi|boba|dim.sum|chinatown|'
+                r'kpop|kdrama|hallyu|aapi|pacific.islander)',
+                re.IGNORECASE,
+            )
+            for article in articles[:200]:
+                title = article.get("article", "").replace("_", " ")
+                views = article.get("views", 0)
+                if aapi_filter.search(title) and views > 10000:
+                    words = re.findall(r"[a-z][a-z\-']{2,}", title.lower())
+                    for w in words:
+                        if w not in _REDDIT_STOP_WORDS:
+                            scored[w] = max(scored.get(w, 0), views)
+    except Exception as e:
+        print(f"Wikipedia top pages error: {e}")
+
+    def _fetch_wiki_page_views(page: str) -> tuple:
+        try:
+            end_date = yesterday.strftime("%Y%m%d")
+            start_date = (yesterday - timedelta(days=7)).strftime("%Y%m%d")
+            resp = requests.get(
+                f"https://wikimedia.org/api/rest_v1/metrics/pageviews/per-article/"
+                f"en.wikipedia/all-access/all-agents/{page}/daily/{start_date}/{end_date}",
+                headers=_WIKI_HEADERS,
+                timeout=4,
+            )
+            if resp.status_code != 200:
+                return (page, 0)
+            items = resp.json().get("items", [])
+            if len(items) < 2:
+                return (page, 0)
+            recent_views = items[-1].get("views", 0)
+            avg_views = sum(i.get("views", 0) for i in items[:-1]) / max(len(items) - 1, 1)
+            spike_ratio = recent_views / max(avg_views, 1)
+            if spike_ratio > 1.5 and recent_views > 5000:
+                return (page, int(recent_views * spike_ratio))
+            return (page, 0)
+        except Exception:
+            return (page, 0)
+
+    with ThreadPoolExecutor(max_workers=10) as executor:
+        futures = [executor.submit(_fetch_wiki_page_views, p) for p in _WIKIPEDIA_AAPI_PAGES]
+        for future in as_completed(futures):
+            page, spike_score = future.result()
+            if spike_score > 0:
+                title = page.replace("_", " ").lower()
+                words = re.findall(r"[a-z][a-z\-']{2,}", title)
+                for w in words:
+                    if w not in _REDDIT_STOP_WORDS:
+                        scored[w] = max(scored.get(w, 0), spike_score)
+
+    _wikipedia_scored_keywords = scored
+    _wikipedia_cache_time = now
+    print(f"Wikipedia: cached {len(scored)} scored keywords.")
+    return scored
+
+
 # ── Engagement scoring ───────────────────────────────────────────────────────
 
 ENGAGEMENT_TRIGGERS = re.compile(
@@ -239,11 +521,25 @@ EMOTIONAL_TRIGGERS = re.compile(
 )
 
 SOCIAL_TOPIC_SCORES = {
-    "Lifestyle & New Openings": 10,
-    "Culture":                  9,
-    "Brand & Founder":          7,
-    "Community":                5,
+    "Lifestyle & New Openings": 5,
+    "Culture":                  4,
+    "Brand & Founder":          3,
+    "Community":                2,
 }
+
+
+def _compute_keyword_heat(source_dict: dict, text: str, max_points: int,
+                          divisor: float = 500.0) -> int:
+    """Shared logic for computing keyword-match heat from any engagement source."""
+    if not source_dict:
+        return 0
+    matched = [eng for kw, eng in source_dict.items() if kw in text]
+    if not matched:
+        return 0
+    top = max(matched)
+    count = len(matched)
+    raw = min(top / divisor, 1.0) * (max_points * 0.6) + min(count / 5, 1.0) * (max_points * 0.4)
+    return min(max_points, int(raw))
 
 
 def calculate_engagement_score(
@@ -258,76 +554,70 @@ def calculate_engagement_score(
     Returns (popularity_score, social_boost).
 
     Factors:
-      - Recency           0-15   fresher content performs better
-      - Reddit heat       0-25   topics with real Reddit engagement
-      - Content signals   0-20   milestone language, shareability, questions
-      - Emotional pull    0-10   pride/outrage/joy drive saves & shares
-      - Visual potential  0-15   Instagram is visual-first
-      - Topic category    0-10   food/kpop/lifestyle outperform on IG
-      - Title quality      0-5   optimal length for captions
+      - Recency                  0-12   fresher content performs better
+      - Reddit heat              0-18   topics with real Reddit engagement
+      - Google Trends heat       0-15   topics spiking on Google search
+      - YouTube heat             0-10   topics trending in YouTube videos
+      - Wikipedia heat           0-10   topics spiking in Wikipedia views
+      - Content signals          0-15   milestone language, shareability
+      - Emotional pull            0-5   pride/outrage/joy drive saves & shares
+      - Visual potential         0-10   Instagram is visual-first
+      - Topic category            0-5   food/kpop/lifestyle outperform on IG
     """
-    text  = (title + " " + summary).lower()
+    text = (title + " " + summary).lower()
     combined = title + " " + summary
     score = 0
 
-    # ── Recency (0-15) ──
+    # ── Recency (0-12) ──
     pub_date = parse_date(published)
     if pub_date:
         now = datetime.now(timezone.utc)
         if pub_date.tzinfo is None:
             pub_date = pub_date.replace(tzinfo=timezone.utc)
         hours_ago = max(0, (now - pub_date).total_seconds() / 3600)
-        if   hours_ago < 3:    score += 15
-        elif hours_ago < 6:    score += 14
-        elif hours_ago < 12:   score += 13
-        elif hours_ago < 24:   score += 12
-        elif hours_ago < 48:   score += 10
-        elif hours_ago < 72:   score += 9
-        elif hours_ago < 168:  score += 7
-        elif hours_ago < 336:  score += 5
-        elif hours_ago < 720:  score += 4
-        else:                  score += 2
+        if   hours_ago < 3:    score += 12
+        elif hours_ago < 6:    score += 11
+        elif hours_ago < 12:   score += 10
+        elif hours_ago < 24:   score += 9
+        elif hours_ago < 48:   score += 7
+        elif hours_ago < 72:   score += 6
+        elif hours_ago < 168:  score += 5
+        elif hours_ago < 336:  score += 3
+        elif hours_ago < 720:  score += 2
+        else:                  score += 1
     else:
-        score += 4
-
-    # ── Reddit heat (0-25) ──
-    reddit = fetch_reddit_scored_keywords()
-    if reddit:
-        matched_scores = [eng for kw, eng in reddit.items() if kw in text]
-        if matched_scores:
-            top_engagement = max(matched_scores)
-            match_count    = len(matched_scores)
-            heat = min(25, int(
-                min(top_engagement / 500, 1.0) * 15
-                + min(match_count / 5, 1.0) * 10
-            ))
-            score += heat
-
-    # ── Content signals (0-20) ──
-    if ENGAGEMENT_TRIGGERS.search(combined):
-        score += 10
-    if SHAREABILITY_TRIGGERS.search(combined):
-        score += 6
-    if "?" in title:
-        score += 4
-
-    # ── Emotional resonance (0-10) — drives saves & shares on IG ──
-    emotional_matches = len(EMOTIONAL_TRIGGERS.findall(combined))
-    score += min(10, emotional_matches * 4)
-
-    # ── Visual potential (0-15) — Instagram is image-first ──
-    if has_image:
-        score += 15
-
-    # ── Topic category (0-10) — food/kpop/lifestyle crush on IG ──
-    score += SOCIAL_TOPIC_SCORES.get(category, 4)
-
-    # ── Title quality (0-5) ──
-    title_len = len(title)
-    if 40 <= title_len <= 100:
-        score += 5
-    elif 25 <= title_len <= 120:
         score += 3
+
+    # ── Reddit heat (0-18) ──
+    score += _compute_keyword_heat(fetch_reddit_scored_keywords(), text, 18)
+
+    # ── Google Trends heat (0-15) ──
+    score += _compute_keyword_heat(fetch_google_trends_keywords(), text, 15, divisor=300.0)
+
+    # ── YouTube heat (0-10) ──
+    score += _compute_keyword_heat(fetch_youtube_trending_keywords(), text, 10, divisor=50000.0)
+
+    # ── Wikipedia heat (0-10) ──
+    score += _compute_keyword_heat(fetch_wikipedia_trending_keywords(), text, 10, divisor=50000.0)
+
+    # ── Content signals (0-15) ──
+    if ENGAGEMENT_TRIGGERS.search(combined):
+        score += 8
+    if SHAREABILITY_TRIGGERS.search(combined):
+        score += 4
+    if "?" in title:
+        score += 3
+
+    # ── Emotional resonance (0-5) ──
+    emotional_matches = len(EMOTIONAL_TRIGGERS.findall(combined))
+    score += min(5, emotional_matches * 2)
+
+    # ── Visual potential (0-10) ──
+    if has_image:
+        score += 10
+
+    # ── Topic category (0-5) ──
+    score += SOCIAL_TOPIC_SCORES.get(category, 2)
 
     social_boost = score >= 55
     return min(score, 100), social_boost
@@ -761,9 +1051,7 @@ def get_articles_cached():
             for r in rows
         ]
 
-        resp = jsonify(articles)
-        resp.headers["Cache-Control"] = "public, max-age=60, stale-while-revalidate=120"
-        return resp
+        return jsonify(articles)
     except Exception as e:
         print(f"Cached articles error: {e}")
         return jsonify([])
