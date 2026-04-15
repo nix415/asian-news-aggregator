@@ -27,9 +27,9 @@ export default function DesktopNav({ dark, onToggleDark }: Props) {
             e.preventDefault();
             navigate("/");
           }}
-          className="font-display text-[20px] tracking-[0.5px] text-primary hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm transition-opacity"
+          className="font-display text-[20px] tracking-[0.5px] text-primary hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm transition-opacity"
         >
-          Asian<span className="gradient-text text-[8px] font-sans font-medium tracking-[2px] uppercase mx-1 relative -top-0.5">news</span>Founded
+          Asian<span className="gradient-text text-[7px] font-sans font-medium tracking-[2px] uppercase mx-1 relative -top-0.5">news</span>Founded
         </a>
 
         <div className="flex items-center gap-1">

@@ -46,15 +46,20 @@ export default function Header({
       {/* Top bar */}
       <div className="max-w-[1520px] mx-auto px-10 h-[60px] grid grid-cols-[1fr_auto_1fr] items-center gap-4 max-sm:px-4">
         <div className="flex-1" />
-        <div
-          className="font-display text-[26px] tracking-[0.5px] text-primary flex items-baseline cursor-pointer transition-opacity duration-200 hover:opacity-75"
-          onClick={() => navigate("/")}
-        >
-          Asian
-          <span className="gradient-text text-[9px] font-sans font-medium tracking-[2px] uppercase mx-1.5 relative -top-0.5">
-            news
+        <div className="flex flex-col items-center">
+          <div
+            className="font-display text-[20px] tracking-[0.5px] text-primary flex items-baseline cursor-pointer transition-opacity duration-200 hover:opacity-75"
+            onClick={() => navigate("/")}
+          >
+            Asian
+            <span className="gradient-text text-[7px] font-sans font-medium tracking-[2px] uppercase mx-1.5 relative -top-0.5">
+              news
+            </span>
+            Founded
+          </div>
+          <span className="text-[12px] italic text-muted max-sm:hidden">
+            Your roundup of business, news, &amp; the new.
           </span>
-          Founded
         </div>
         <div className="flex justify-end items-center gap-2.5">
           <button

@@ -204,7 +204,7 @@ export default function Category({
       </div>
 
       {/* Stats bar */}
-      <div className="max-w-[1520px] mx-auto px-10 py-3 flex items-center gap-6 border-b border-line max-sm:px-4">
+      <div className="max-w-[1520px] mx-auto px-10 py-4 flex items-center gap-6 border-b border-line max-sm:px-4">
         <div className="flex items-baseline gap-1.5">
           <span className="font-serif text-[22px] text-primary">
             {filtered.length}
@@ -225,14 +225,14 @@ export default function Category({
 
       {/* Loading skeleton */}
       {loading && (
-        <div className="max-w-[1520px] mx-auto px-10 pt-7 pb-40 max-sm:px-4">
+        <div className="max-w-[1520px] mx-auto px-10 pt-7 pb-[160px] max-sm:px-4">
           <SkeletonGrid />
         </div>
       )}
 
       {/* Article grid */}
       {!loading && (
-        <div className="max-w-[1520px] mx-auto px-10 pt-7 pb-40 max-sm:px-4">
+        <div className="max-w-[1520px] mx-auto px-10 pt-7 pb-[160px] max-sm:px-4">
           {filtered.length === 0 ? (
             <div className="p-10 text-center text-[12px] text-muted border border-dashed border-line tracking-[0.5px]">
               No articles found for these filters.

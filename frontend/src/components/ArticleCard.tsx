@@ -28,7 +28,7 @@ export default function ArticleCard({
   return (
     <>
       <article
-        className="bg-surface border border-line transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:-translate-y-[3px] animate-card-in cursor-pointer"
+        className="group bg-surface border border-line rounded-[14px] overflow-hidden transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:-translate-y-[3px] animate-card-in cursor-pointer"
         style={{ animationDelay: `${Math.min(index * 0.045, 0.7)}s` }}
         onClick={() => setModalOpen(true)}
       >
@@ -36,17 +36,16 @@ export default function ArticleCard({
         {article.image && !imgError && (
           <div className="w-full overflow-hidden border-b border-line">
             <img
-              className="w-full block object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.04]"
+              className="w-full block object-cover transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.04]"
               src={article.image}
               alt=""
               loading="lazy"
-              decoding="async"
               onError={() => setImgError(true)}
             />
           </div>
         )}
 
-        <div className="p-4 flex flex-col">
+        <div className="px-[18px] pt-4 pb-3.5 flex flex-col">
           {/* Meta row */}
           <div className="flex items-center justify-between gap-1.5 mb-2.5">
             <div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
@@ -56,7 +55,6 @@ export default function ArticleCard({
                   src={meta.url}
                   alt=""
                   loading="lazy"
-                  decoding="async"
                   onError={() => setFaviconError(true)}
                 />
               ) : (

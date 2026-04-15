@@ -18,7 +18,7 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
   ).length;
 
   return (
-    <div className="min-h-screen flex flex-col items-center pt-[8vh] pb-[6vh] px-8 relative max-sm:pb-[80px]">
+    <div className="min-h-screen flex flex-col items-center pt-[18vh] pb-[6vh] px-8 relative max-sm:px-4 max-sm:pb-[80px]">
       {/* Dark mode toggle (mobile only; desktop uses DesktopNav) */}
       <button
         onClick={onToggleDark}
@@ -55,12 +55,7 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
           onClick={() => navigate("/top-picks")}
           className="flex items-center gap-2 bg-primary text-surface border-none px-5 py-2.5 text-[11px] font-semibold tracking-[0.8px] uppercase cursor-pointer transition-all duration-150 hover:bg-primary/90 active:scale-[0.97]"
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
+          <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor">
             <path
               fillRule="evenodd"
               d="M12.395 2.553a1 1 0 00-1.45-.385c-.345.23-.614.558-.822.88-.214.33-.403.713-.57 1.116-.334.804-.614 1.768-.84 2.734a31.365 31.365 0 00-.613 3.58 2.64 2.64 0 01-.945-1.067c-.328-.68-.398-1.534-.398-2.654A1 1 0 005.05 6.05 6.981 6.981 0 003 11a7 7 0 1011.95-4.95c-.592-.591-.98-.985-1.348-1.467-.363-.476-.724-1.063-1.207-2.03zM12.12 15.12A3 3 0 017 13s.879.5 2.5.5c0-1 .5-4 1.25-4.5.5 1 .786 1.293 1.371 1.879A2.99 2.99 0 0113 13a2.99 2.99 0 01-.879 2.121z"
@@ -78,74 +73,28 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
           onClick={() => navigate("/saved")}
           className="flex items-center gap-2 bg-surface text-mid border border-line px-5 py-2.5 text-[11px] font-semibold tracking-[0.8px] uppercase cursor-pointer transition-all duration-150 hover:border-primary hover:text-primary active:scale-[0.97]"
         >
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z" />
           </svg>
           Saved
         </button>
       </div>
 
-      <div className="w-full max-w-[1200px] overflow-x-auto pb-4 scrollbar-hide">
-        <div className="flex gap-5 w-max max-sm:gap-3">
-          {/* All Articles card */}
-          <div
-            className={`relative cursor-pointer bg-surface border border-line overflow-hidden aspect-[3/4] w-[260px] shrink-0
-              shadow-[0_2px_4px_rgba(0,0,0,0.04),0_8px_20px_rgba(0,0,0,0.08),0_20px_48px_rgba(0,0,0,0.06)]
-              transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]
-              hover:-translate-y-2 hover:scale-[1.015]
-              hover:shadow-[0_4px_8px_rgba(0,0,0,0.05),0_20px_48px_rgba(0,0,0,0.14),0_40px_80px_rgba(0,0,0,0.08)]
-              active:-translate-y-0.5 active:scale-[0.99] active:duration-100
-              animate-card-in max-sm:w-[200px]`}
-            style={{ animationDelay: "0.15s" }}
-            onClick={() => navigate("/category/All")}
-          >
-            <div
-              className="absolute top-0 left-0 right-0 h-[3px] z-2"
-              style={{ background: "linear-gradient(90deg, #8BBFB3, #C4655C, #9A6478, #B5A898)" }}
-            />
-            <div className="absolute inset-0 overlay-gradient-b" />
-            <div className="absolute bottom-0 left-0 right-0 p-5 pb-6">
-              <span className="block text-[9px] font-bold tracking-[2px] uppercase text-muted mb-1.5">
-                Browse
-              </span>
-              <span className="block font-serif text-[clamp(22px,2.2vw,30px)] leading-tight text-primary mb-2">
-                All Articles
-              </span>
-              <span className="block text-[11px] leading-relaxed text-mid mb-2 line-clamp-2">
-                Every story across all categories in one place.
-              </span>
-              <span className="text-[11px] text-muted">
-                {loading ? "Loading…" : `${articles.length} articles`}
-              </span>
-            </div>
-            <div className="absolute bottom-[22px] right-5 flex items-center justify-center w-7 h-7 border border-line bg-white/80 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M7 17L17 7M17 7H7M17 7v10" />
-              </svg>
-            </div>
-          </div>
-
-          {CATEGORIES.map((cat, i) => (
-            <div key={cat} className="w-[260px] shrink-0 max-sm:w-[200px]">
-              <CategoryCard
-                category={cat}
-                articles={buckets[cat]}
-                loading={loading}
-                index={i + 1}
-              />
-            </div>
-          ))}
-        </div>
+      {/* Category grid — 4 columns desktop, 2 on tablet/mobile */}
+      <div className="cat-grid animate-hero-in-delay">
+        {CATEGORIES.map((cat, i) => (
+          <CategoryCard
+            key={cat}
+            category={cat}
+            articles={buckets[cat]}
+            loading={loading}
+            index={i}
+          />
+        ))}
       </div>
 
-      <p className="font-display text-[11px] tracking-[2.5px] text-[#d8d4cf] text-center mt-[clamp(32px,5vh,56px)] select-none animate-hero-in-late">
+      {/* Watermark */}
+      <p className="font-display text-[11px] tracking-[2.5px] text-[#d8d4cf] text-center mt-[clamp(32px,5vh,56px)] select-none animate-hero-in-late uppercase">
         asian founded
       </p>
     </div>

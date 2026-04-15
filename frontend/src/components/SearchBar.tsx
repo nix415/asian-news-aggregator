@@ -6,7 +6,7 @@ interface Props {
 export default function SearchBar({ value, onChange }: Props) {
   return (
     <div className="fixed bottom-7 left-1/2 -translate-x-1/2 z-[300] w-[min(460px,calc(100vw-40px))]">
-      <div className="relative bg-white/45 backdrop-blur-[18px] border border-[rgba(228,224,219,0.6)] rounded-full flex items-center shadow-[0_4px_24px_rgba(0,0,0,0.07)] transition-all duration-200 focus-within:shadow-[0_6px_32px_rgba(0,0,0,0.12)] focus-within:bg-white/65 focus-within:border-[rgba(180,175,170,0.7)]">
+      <div className="search-pill relative bg-white/45 backdrop-blur-[18px] border border-[rgba(228,224,219,0.6)] rounded-full flex items-center shadow-[0_4px_24px_rgba(0,0,0,0.07)] transition-all duration-200 focus-within:shadow-[0_6px_32px_rgba(0,0,0,0.12)] focus-within:bg-white/65 focus-within:border-[rgba(180,175,170,0.7)]">
         <svg
           className="absolute left-3.5 text-muted pointer-events-none"
           width="14"

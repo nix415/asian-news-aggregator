@@ -184,10 +184,22 @@ html.dark .overlay-gradient-r {
 }
 
 .overlay-gradient-b {
-  background: linear-gradient(to bottom, transparent, rgba(247,245,242,0.2) 40%, rgba(247,245,242,0.95));
+  background: linear-gradient(
+    to bottom,
+    rgba(247,245,242,0) 0%,
+    rgba(247,245,242,0.2) 20%,
+    rgba(247,245,242,0.75) 60%,
+    rgba(247,245,242,0.95) 100%
+  );
 }
 html.dark .overlay-gradient-b {
-  background: linear-gradient(to bottom, transparent, rgba(20,20,20,0.2) 40%, rgba(20,20,20,0.95));
+  background: linear-gradient(
+    to bottom,
+    rgba(20,20,20,0) 0%,
+    rgba(20,20,20,0.2) 20%,
+    rgba(20,20,20,0.75) 60%,
+    rgba(20,20,20,0.95) 100%
+  );
 }
 
 .overlay-solid {
@@ -211,6 +223,62 @@ html.dark .header-blur {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Ripple effect for interactive cards */
+@keyframes ripple-expand {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+.ripple-host {
+  position: relative;
+  overflow: hidden;
+}
+.ripple-host .ripple {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.12);
+  transform: scale(0);
+  animation: ripple-expand 0.55s linear;
+  pointer-events: none;
+}
+
+/* Landing exit transition */
+.landing-exit {
+  opacity: 0;
+  transform: scale(0.97) translateY(-20px);
+  transition: opacity 0.4s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Dark-aware search pill glass */
+html.dark .search-pill {
+  background: rgba(30,30,30,0.55);
+  border-color: rgba(60,60,60,0.6);
+}
+html.dark .search-pill:focus-within {
+  background: rgba(30,30,30,0.75);
+  border-color: rgba(80,80,80,0.7);
+}
+
+/* Category grid */
+.cat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+  width: 100%;
+  max-width: 1200px;
+}
+@media (max-width: 1100px) {
+  .cat-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 640px) {
+  .cat-grid {
+    gap: 12px;
+  }
 }
 
 /* Masonry grid */
