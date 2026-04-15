@@ -12,23 +12,15 @@ import Breadcrumbs from "../components/Breadcrumbs";
 interface Props {
   articles: Article[];
   loading: boolean;
-  archiveMode: boolean;
-  onToggleArchive: () => void;
   isBookmarked: (link: string) => boolean;
   onToggleBookmark: (link: string) => void;
-  dark: boolean;
-  onToggleDark: () => void;
 }
 
 export default function Category({
   articles,
   loading,
-  archiveMode,
-  onToggleArchive,
   isBookmarked,
   onToggleBookmark,
-  dark,
-  onToggleDark,
 }: Props) {
   const { name } = useParams<{ name: string }>();
   const navigate = useNavigate();
@@ -36,9 +28,9 @@ export default function Category({
   const isAllArticles = rawCategory === "All";
   const category = (isAllArticles ? "All" : rawCategory) as CategoryName | "All";
 
-  const [source, setSource] = useState("all");
+  const source = "all";
   const [timeRange, setTimeRange] = useState<TimeRange>("month");
-  const [sort, setSort] = useState<SortOption>("popular");
+  const [sort, setSort] = useState<SortOption>("trending");
   const [search, setSearch] = useState("");
   const [headerHidden, setHeaderHidden] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
@@ -116,16 +108,10 @@ export default function Category({
       <Header
         visible={true}
         hidden={headerHidden}
-        source={source}
-        onSourceChange={setSource}
         timeRange={timeRange}
         onTimeRangeChange={setTimeRange}
         sort={sort}
         onSortChange={setSort}
-        archiveMode={archiveMode}
-        onToggleArchive={onToggleArchive}
-        dark={dark}
-        onToggleDark={onToggleDark}
       />
 
       {/* Hero banner */}
@@ -139,17 +125,8 @@ export default function Category({
         )}
         <div className="absolute inset-0 overlay-gradient-r" />
 
-        <div className="absolute top-5 left-10 z-10 flex flex-col gap-1 max-sm:left-4">
+        <div className="absolute top-5 left-10 z-10 max-sm:left-4">
           <Breadcrumbs items={[{ label: "Home", path: "/" }, { label: isAllArticles ? "All Articles" : category }]} />
-          <button
-            className="flex items-center gap-1.5 text-[11px] font-semibold tracking-[0.5px] text-muted bg-transparent border-none p-0 cursor-pointer transition-all duration-200 hover:text-primary hover:-translate-x-[3px] w-fit focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 rounded"
-            onClick={() => navigate("/")}
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M19 12H5M12 5l-7 7 7 7" />
-            </svg>
-            All Categories
-          </button>
         </div>
 
         <div className="relative z-[1] flex items-end justify-between w-full max-w-[1520px] mx-auto">

@@ -21,7 +21,7 @@ export default function CategoryCard({
 
   return (
     <div
-      className={`group relative cursor-pointer bg-surface border border-line overflow-hidden aspect-[3/4]
+      className={`group relative cursor-pointer bg-surface border border-line rounded-[14px] overflow-hidden aspect-[3/4]
         shadow-[0_2px_4px_rgba(0,0,0,0.03),0_8px_20px_rgba(0,0,0,0.04),0_20px_48px_rgba(0,0,0,0.04)]
         transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]
         hover:-translate-y-2 hover:scale-[1.015]

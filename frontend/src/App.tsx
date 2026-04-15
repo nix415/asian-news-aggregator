@@ -22,7 +22,7 @@ function PageLoader() {
 }
 
 function AppRoutes() {
-  const { articles, loading, archiveMode, toggleArchive } = useArticles();
+  const { articles, loading } = useArticles();
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
   const { dark, toggle: toggleDark } = useDarkMode();
   const { showToast } = useToast();
@@ -65,12 +65,8 @@ function AppRoutes() {
                 <Category
                   articles={articles}
                   loading={loading}
-                  archiveMode={archiveMode}
-                  onToggleArchive={toggleArchive}
                   isBookmarked={isBookmarked}
                   onToggleBookmark={handleToggleBookmark}
-                  dark={dark}
-                  onToggleDark={toggleDark}
                 />
               }
             />
