@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useCallback, lazy, Suspense } from "react";
 import { useArticles } from "./hooks/useArticles";
 import { useBookmarks } from "./hooks/useBookmarks";
@@ -36,67 +36,70 @@ function AppRoutes() {
     [isBookmarked, toggleBookmark, showToast],
   );
 
+  const location = useLocation();
+  const isLanding = location.pathname === "/";
+
   return (
     <>
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      <DesktopNav dark={dark} onToggleDark={toggleDark} />
-      <main id="main-content" className="pt-0 sm:pt-12">
+      {!isLanding && <DesktopNav dark={dark} onToggleDark={toggleDark} />}
+      <main id="main-content" className={isLanding ? "" : "pt-0 sm:pt-12"}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-          <Route
-            path="/"
-            element={
-              <Landing
-              articles={articles}
-              loading={loading}
-              dark={dark}
-              onToggleDark={toggleDark}
+            <Route
+              path="/"
+              element={
+                <Landing
+                  articles={articles}
+                  loading={loading}
+                  dark={dark}
+                  onToggleDark={toggleDark}
+                />
+              }
             />
-          }
-        />
-        <Route
-          path="/category/:name"
-          element={
-            <Category
-              articles={articles}
-              loading={loading}
-              archiveMode={archiveMode}
-              onToggleArchive={toggleArchive}
-              isBookmarked={isBookmarked}
-              onToggleBookmark={handleToggleBookmark}
-              dark={dark}
-              onToggleDark={toggleDark}
+            <Route
+              path="/category/:name"
+              element={
+                <Category
+                  articles={articles}
+                  loading={loading}
+                  archiveMode={archiveMode}
+                  onToggleArchive={toggleArchive}
+                  isBookmarked={isBookmarked}
+                  onToggleBookmark={handleToggleBookmark}
+                  dark={dark}
+                  onToggleDark={toggleDark}
+                />
+              }
             />
-          }
-        />
-        <Route
-          path="/top-picks"
-          element={
-            <TopPicks
-              articles={articles}
-              loading={loading}
-              isBookmarked={isBookmarked}
-              onToggleBookmark={handleToggleBookmark}
+            <Route
+              path="/top-picks"
+              element={
+                <TopPicks
+                  articles={articles}
+                  loading={loading}
+                  isBookmarked={isBookmarked}
+                  onToggleBookmark={handleToggleBookmark}
+                />
+              }
             />
-          }
-        />
-        <Route
-          path="/saved"
-          element={
-            <Saved
-              articles={articles}
-              loading={loading}
-              isBookmarked={isBookmarked}
-              onToggleBookmark={handleToggleBookmark}
+            <Route
+              path="/saved"
+              element={
+                <Saved
+                  articles={articles}
+                  loading={loading}
+                  isBookmarked={isBookmarked}
+                  onToggleBookmark={handleToggleBookmark}
+                />
+              }
             />
-          }
-        />
           </Routes>
         </Suspense>
       </main>
-      <MobileNav />
+      {!isLanding && <MobileNav />}
     </>
   );
 }
