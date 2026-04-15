@@ -129,18 +129,15 @@ export default function Category({
           <Breadcrumbs items={[{ label: "Home", path: "/" }, { label: isAllArticles ? "All Articles" : category }]} />
         </div>
 
-        <div className="relative z-[1] flex items-end justify-between w-full max-w-[1520px] mx-auto">
+        <div className="relative z-[1] w-full max-w-[1520px] mx-auto text-center">
           <h2 className="font-serif text-[clamp(36px,5vw,64px)] text-primary leading-none">
             {isAllArticles ? "All Articles" : category}
           </h2>
-          <span className="text-[11px] text-muted tracking-[0.5px]">
-            {filtered.length} articles{isAllArticles ? "" : " in this category"}
-          </span>
         </div>
       </div>
 
       {/* Category tabs */}
-      <div className="max-w-[1520px] mx-auto px-10 flex items-center gap-0 border-b border-line max-sm:px-4 overflow-x-auto">
+      <div className="max-w-[1520px] mx-auto px-10 flex items-center justify-center gap-0 border-b border-line max-sm:px-4 overflow-x-auto">
         <button
           onClick={() => {
             if (!isAllArticles) navigate("/category/All");

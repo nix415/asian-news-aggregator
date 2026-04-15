@@ -1,4 +1,3 @@
-import { useNavigate } from "react-router-dom";
 import { TIME_RANGES, SORT_OPTIONS } from "../lib/constants";
 import type { SortOption, TimeRange } from "../types";
 
@@ -19,8 +18,6 @@ export default function Header({
   sort,
   onSortChange,
 }: Props) {
-  const navigate = useNavigate();
-
   const headerClass = [
     "sticky top-0 z-50 header-blur backdrop-blur-[14px] border-b border-line",
     "transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]",
@@ -31,27 +28,6 @@ export default function Header({
 
   return (
     <header className={headerClass}>
-      {/* Top bar */}
-      <div className="max-w-[1520px] mx-auto px-10 h-[60px] grid grid-cols-[1fr_auto_1fr] items-center gap-4 max-sm:px-4">
-        <div className="flex-1" />
-        <div className="flex flex-col items-center">
-          <div
-            className="font-display text-[20px] tracking-[0.5px] text-primary flex items-baseline cursor-pointer transition-opacity duration-200 hover:opacity-75"
-            onClick={() => navigate("/")}
-          >
-            Asian
-            <span className="gradient-text text-[7px] font-sans font-medium tracking-[2px] uppercase mx-1.5 relative -top-0.5">
-              news
-            </span>
-            Founded
-          </div>
-          <span className="text-[12px] italic text-muted max-sm:hidden">
-            Your roundup of business, news, &amp; the new.
-          </span>
-        </div>
-        <div className="flex-1" />
-      </div>
-
       {/* Filter row */}
       <div className="max-w-[1520px] mx-auto px-10 py-3.5 flex items-center gap-2 flex-wrap border-b border-line max-sm:px-4">
         <select

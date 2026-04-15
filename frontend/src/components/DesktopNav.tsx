@@ -20,40 +20,27 @@ export default function DesktopNav({ dark, onToggleDark }: Props) {
       className="hidden sm:block fixed top-0 left-0 right-0 z-[100] header-blur backdrop-blur-[14px] border-b border-line"
       aria-label="Main navigation"
     >
-      <div className="max-w-[1520px] mx-auto px-6 h-12 flex items-center justify-between gap-6">
-        <a
-          href="/"
-          onClick={(e) => {
-            e.preventDefault();
-            navigate("/");
-          }}
-          className="font-display text-[20px] tracking-[0.5px] text-primary hover:opacity-75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 rounded-sm transition-opacity"
-        >
-          Asian<span className="gradient-text text-[7px] font-sans font-medium tracking-[2px] uppercase mx-1 relative -top-0.5">news</span>Founded
-        </a>
-
-        <div className="flex items-center gap-1">
-          {LINKS.map(({ path, label }) => {
-            const isActive = path === "/" ? location.pathname === "/" : location.pathname === path;
-            const activeClass = isActive
-              ? "text-primary font-semibold"
-              : "text-muted hover:text-primary";
-            return (
-              <button
-                key={path}
-                onClick={() => navigate(path)}
-                className={`px-4 py-2 text-[12px] tracking-[0.5px] uppercase bg-transparent border-none cursor-pointer transition-colors duration-150 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${activeClass}`}
-              >
-                {label}
-              </button>
-            );
-          })}
-        </div>
+      <div className="max-w-[1520px] mx-auto px-6 h-12 flex items-center justify-center gap-1 relative">
+        {LINKS.map(({ path, label }) => {
+          const isActive = path === "/" ? location.pathname === "/" : location.pathname === path;
+          const activeClass = isActive
+            ? "text-primary font-semibold"
+            : "text-muted hover:text-primary";
+          return (
+            <button
+              key={path}
+              onClick={() => navigate(path)}
+              className={`px-4 py-2 text-[12px] tracking-[0.5px] uppercase bg-transparent border-none cursor-pointer transition-colors duration-150 rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${activeClass}`}
+            >
+              {label}
+            </button>
+          );
+        })}
 
         <button
           type="button"
           onClick={onToggleDark}
-          className="flex items-center justify-center w-8 h-8 rounded-sm bg-surface border border-line text-mid hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
+          className="absolute right-6 flex items-center justify-center w-8 h-8 rounded-sm bg-surface border border-line text-mid hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
           title={dark ? "Switch to light mode" : "Switch to dark mode"}
           aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
         >
