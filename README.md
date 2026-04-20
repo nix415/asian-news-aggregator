@@ -4,7 +4,7 @@ A full-stack news app that pulls trending stories about AAPI culture, business, 
 
 ## Why I built this
 
-I built this during my **social media internship at [Asian Founded](https://www.instagram.com/asianfounded/)**, where part of my job was finding Asian-related, trending articles across the web every day. Doing it manually was slow — I had to bounce between a dozen tabs, RSS feeds, and Reddit threads just to fill a content calendar. So I streamlined the whole workflow into one tool: an aggregator that surfaces the same stories I would have hand-picked, organized into editorial categories I could actually use for posts.
+I built this during my **social media internship at [Asian Founded](https://www.instagram.com/asianfounded/)**, where part of my job was finding AAPI trending articles every day. Doing it manually was slow, so I had to bounce between a many tabs, RSS feeds, and Reddit threads just to find articles that would could maybe publish. I thought to myself, how about I streamline the whole workflow into one tool: an aggregator that surfaces the same stories I would have hand-picked, organized into editorial categories I could actually use for posts.
 
 ## Features
 
