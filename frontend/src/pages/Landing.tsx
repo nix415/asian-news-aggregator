@@ -1,3 +1,5 @@
+import { useState, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import type { Article, CategoryName } from "../types";
 import { CATEGORIES } from "../lib/constants";
 import CategoryCard from "../components/CategoryCard";
@@ -11,9 +13,19 @@ interface Props {
 
 export default function Landing({ articles, loading, dark, onToggleDark }: Props) {
   const buckets = groupByCategory(articles);
+  const navigate = useNavigate();
+  const [exiting, setExiting] = useState(false);
+  const pendingPath = useRef<string | null>(null);
+
+  const handleNavigate = useCallback((path: string) => {
+    if (exiting) return;
+    pendingPath.current = path;
+    setExiting(true);
+    setTimeout(() => navigate(path), 420);
+  }, [exiting, navigate]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center pt-[18vh] pb-[6vh] px-8 relative max-sm:px-4 max-sm:pb-[80px]">
+    <div className={`min-h-screen flex flex-col items-center pt-[18vh] pb-[6vh] px-8 relative max-sm:px-4 max-sm:pb-[80px] transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] ${exiting ? "opacity-0 scale-[0.97] -translate-y-5" : ""}`}>
       {/* Dark mode toggle (mobile only; desktop uses DesktopNav) */}
       <button
         onClick={onToggleDark}
@@ -53,6 +65,7 @@ export default function Landing({ articles, loading, dark, onToggleDark }: Props
             articles={buckets[cat]}
             loading={loading}
             index={i}
+            onNavigate={handleNavigate}
           />
         ))}
       </div>

@@ -1,67 +1,52 @@
 # Asian News Aggregator (AsianFounded)
 
-A full-stack news discovery app focused on **AAPI stories, Asian diaspora media, culture, and lifestyle**. It aggregates articles from trusted RSS sources, enriches them with optional NewsAPI and YouTube metadata, and serves a fast **React** frontend with category browsing, bookmarks, and AI-assisted social copy.
+A full-stack news app that pulls trending stories about AAPI culture, business, and lifestyle into one clean React interface.
 
-## Why it exists
+## Why I built this
 
-Recruiters and visitors can see end-to-end ownership: **data ingestion and normalization**, **keyword-based categorization**, **caching and cron-friendly refresh**, and a **polished client** with routing, dark mode, and local persistence.
+I built this during my **social media internship at [Asian Founded](https://www.instagram.com/asianfounded/)**, where part of my job was finding Asian-related, trending articles across the web every day. Doing it manually was slow — I had to bounce between a dozen tabs, RSS feeds, and Reddit threads just to fill a content calendar. So I streamlined the whole workflow into one tool: an aggregator that surfaces the same stories I would have hand-picked, organized into editorial categories I could actually use for posts.
 
 ## Features
 
-- **Multi-source RSS pipeline** — NBC Asian America, SCMP, Nikkei Asia, NextShark, Korea Herald, Japan Times, culture and lifestyle feeds, and more.
-- **Four editorial-style categories** — Brand & Founder, Culture, Community, Lifestyle & New Openings — driven by configurable keyword rules and source defaults.
-- **Trend signals** — Reddit hot-topic scraping (cached) to surface engagement-weighted themes alongside headlines.
-- **Optional integrations** — NewsAPI.org, YouTube Data API, Anthropic Claude (e.g. platform-specific post drafts via `/api/generate-pitch`).
-- **Supabase** — optional article archiving when `SUPABASE_URL` and `SUPABASE_KEY` are set.
-- **Scheduled refresh** — Vercel Cron can hit a protected refresh endpoint when `CRON_SECRET` is configured.
-- **Frontend** — React 19, TypeScript, Vite, Tailwind CSS v4, React Router, lazy-loaded routes, bookmarks (localStorage), and responsive navigation.
+- Aggregates 15+ AAPI-focused RSS feeds (NBC Asian America, SCMP, Nikkei Asia, NextShark, Korea Herald, Japan Times, and more)
+- Sorts stories into four editorial categories: **Brand & Founder, Culture, Community, Lifestyle & New Openings**
+- Reddit trend signals to surface what audiences are actually engaging with
+- Optional AI-assisted social copy generation for Twitter, Instagram, and LinkedIn (Anthropic Claude)
+- Bookmarks, dark mode, and responsive UI
 
 ## Tech stack
 
-| Layer | Choices |
-|--------|---------|
-| API | Python 3, Flask, feedparser, requests, Anthropic SDK, Supabase client |
-| UI | React, TypeScript, Vite, Tailwind CSS |
-| Deploy | Vercel (static frontend + serverless API; see `vercel.json`) |
-
-## Project layout
-
-```
-api/app.py          # Flask app: feeds, categorization, APIs, cron helpers
-frontend/           # Vite + React SPA
-vercel.json         # Build output and /api rewrite to the Flask handler
-```
-
-A legacy `app.py` at the repo root mirrors the API for older setups; **Vercel targets `api/app.py`**.
+- **Frontend:** React, TypeScript, Vite, Tailwind CSS, React Router
+- **Backend:** Python, Flask, feedparser
+- **Optional services:** NewsAPI, YouTube Data API, Anthropic Claude, Supabase (archiving)
+- **Deploy:** Vercel (static frontend + serverless API)
 
 ## Local development
 
-**Prerequisites:** Node.js 20+, Python 3.11+ (recommended), and optional API keys in a **`.env`** file at the repo root (never commit it; it is gitignored).
+You'll need **Node.js 20+** and **Python 3.11+**.
 
-1. **Backend** (from the `api` directory):
+**Backend:**
 
-   ```bash
-   cd api
-   python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-   pip install -r requirements.txt
-   python app.py
-   ```
+```bash
+cd api
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python app.py
+```
 
-   Flask serves on **http://127.0.0.1:5000** by default.
+**Frontend (separate terminal):**
 
-2. **Frontend** (separate terminal):
+```bash
+cd frontend
+npm install
+npm run dev
+```
 
-   ```bash
-   cd frontend
-   npm install
-   npm run dev
-   ```
-
-   Vite proxies `/api/*` to `http://127.0.0.1:5000` (see `frontend/vite.config.ts`).
+The Vite dev server proxies `/api/*` to Flask on port 5000.
 
 ## Environment variables
 
-Set these in **`.env`** locally or in the **Vercel project settings** for production:
+Create a `.env` file at the repo root (it is gitignored). All variables are optional — the app falls back to RSS-only mode if a key is missing.
 
 | Variable | Purpose |
 |----------|---------|
@@ -69,18 +54,12 @@ Set these in **`.env`** locally or in the **Vercel project settings** for produc
 | `NEWS_API_KEY` | NewsAPI.org — supplemental headlines |
 | `YOUTUBE_API_KEY` | YouTube Data API — related video metadata |
 | `SUPABASE_URL` / `SUPABASE_KEY` | Optional Supabase project for archiving |
-| `CRON_SECRET` | Bearer or query secret for scheduled refresh routes |
-
-The app degrades gracefully when optional keys are missing (RSS-only mode still works).
+| `CRON_SECRET` | Secret for scheduled refresh routes |
 
 ## Deployment
 
-Connect the repository to **Vercel**, set the environment variables above, and deploy. `vercel.json` defines the frontend build and rewrites `/api/*` to the Python handler.
-
-## License
-
-Private / portfolio use unless you add an explicit license.
+Connect the repository to Vercel and add the environment variables in the project settings. `vercel.json` handles the build and routes `/api/*` to the Python serverless handler.
 
 ---
 
-**Maintainer:** [@nix415](https://github.com/nix415) — portfolio-grade full-stack product demo.
+**Maintainer:** [@nix415](https://github.com/nix415)

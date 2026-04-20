@@ -7,6 +7,7 @@ interface Props {
   articles: Article[];
   loading: boolean;
   index: number;
+  onNavigate?: (path: string) => void;
 }
 
 export default function CategoryCard({
@@ -14,6 +15,7 @@ export default function CategoryCard({
   articles,
   loading,
   index,
+  onNavigate,
 }: Props) {
   const navigate = useNavigate();
   const meta = CATEGORY_META[category];
@@ -29,7 +31,10 @@ export default function CategoryCard({
         active:-translate-y-0.5 active:scale-[0.99] active:duration-100
         animate-card-in ${loading ? "animate-shimmer" : ""}`}
       style={{ animationDelay: `${0.15 + index * 0.07}s` }}
-      onClick={() => navigate(`/category/${encodeURIComponent(category)}`)}
+      onClick={() => {
+        const path = `/category/${encodeURIComponent(category)}`;
+        onNavigate ? onNavigate(path) : navigate(path);
+      }}
     >
       {/* Accent top bar */}
       <div
@@ -40,7 +45,7 @@ export default function CategoryCard({
       {/* Background image */}
       {imageArticle?.image && !loading && (
         <img
-          className="absolute inset-0 w-full h-full object-cover opacity-50 transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-60 group-hover:scale-[1.04]"
+          className="absolute inset-0 w-full h-full object-cover opacity-75 transition-all duration-600 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:opacity-85 group-hover:scale-[1.04]"
           src={imageArticle.image}
           alt=""
           onError={(e) => {
@@ -66,20 +71,6 @@ export default function CategoryCard({
         <span className="text-[11px] text-muted transition-colors duration-200 group-hover:text-primary">
           {loading ? "Loading…" : `${articles.length} articles`}
         </span>
-      </div>
-
-      {/* Arrow */}
-      <div className="absolute bottom-[22px] right-5 flex items-center justify-center w-7 h-7 border border-line bg-white/80 z-[1] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:translate-x-[3px] group-hover:-translate-y-[3px] group-hover:bg-white">
-        <svg
-          width="12"
-          height="12"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path d="M7 17L17 7M17 7H7M17 7v10" />
-        </svg>
       </div>
     </div>
   );

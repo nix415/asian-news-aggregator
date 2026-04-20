@@ -1,5 +1,5 @@
-import { useMemo, useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useMemo, useState, useEffect, useRef } from "react";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import type { Article, SortOption, TimeRange, CategoryName } from "../types";
 import { TIME_CUTOFFS } from "../lib/utils";
 import { CATEGORIES, CATEGORY_META } from "../lib/constants";
@@ -26,6 +26,8 @@ export default function Category({
   const navigate = useNavigate();
   const rawCategory = decodeURIComponent(name || "");
   const isAllArticles = rawCategory === "All";
+  const validCategory =
+    isAllArticles || CATEGORIES.includes(rawCategory as CategoryName);
   const category = (isAllArticles ? "All" : rawCategory) as CategoryName | "All";
 
   const source = "all";
@@ -34,6 +36,7 @@ export default function Category({
   const [search, setSearch] = useState("");
   const [headerHidden, setHeaderHidden] = useState(false);
   const [visibleCount, setVisibleCount] = useState(12);
+  const initialBatch = useRef(12);
 
   // Scroll-direction header hide/show
   useEffect(() => {
@@ -53,6 +56,7 @@ export default function Category({
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" as ScrollBehavior });
     setVisibleCount(12);
+    initialBatch.current = 12;
   }, [category, isAllArticles, source, search, timeRange, sort]);
 
   const filtered = useMemo(() => {
@@ -102,6 +106,28 @@ export default function Category({
     (a) => (a.popularity_score || 0) >= 70,
   ).length;
   const heroImage = filtered.find((a) => a.image);
+
+  if (!validCategory) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 px-8 text-center">
+        <h2 className="font-serif text-[clamp(28px,4vw,42px)] text-primary">
+          Category not found
+        </h2>
+        <p className="text-[13px] text-muted max-w-[360px] leading-relaxed">
+          We couldn&apos;t find a category called &ldquo;{rawCategory}&rdquo;.
+        </p>
+        <Link
+          to="/"
+          className="mt-2 inline-flex items-center gap-1.5 text-[12px] font-semibold tracking-[0.5px] uppercase text-accent hover:text-primary transition-colors duration-150"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M19 12H5M12 19l-7-7 7-7" />
+          </svg>
+          Browse categories
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -214,15 +240,19 @@ export default function Category({
           ) : (
             <>
               <div className="masonry-grid">
-                {filtered.slice(0, visibleCount).map((article, i) => (
-                  <ArticleCard
-                    key={article.link}
-                    article={article}
-                    index={i}
-                    bookmarked={isBookmarked(article.link)}
-                    onToggleBookmark={onToggleBookmark}
-                  />
-                ))}
+                {filtered.slice(0, visibleCount).map((article, i) => {
+                  const isSoft = i >= initialBatch.current;
+                  return (
+                    <ArticleCard
+                      key={article.link}
+                      article={article}
+                      index={isSoft ? i - initialBatch.current : i}
+                      bookmarked={isBookmarked(article.link)}
+                      onToggleBookmark={onToggleBookmark}
+                      softEntrance={isSoft}
+                    />
+                  );
+                })}
               </div>
               {visibleCount < filtered.length && (
                 <div className="flex justify-center mt-10">

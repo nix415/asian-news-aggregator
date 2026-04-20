@@ -9,6 +9,7 @@ interface Props {
   index: number;
   bookmarked?: boolean;
   onToggleBookmark?: (link: string) => void;
+  softEntrance?: boolean;
 }
 
 export default function ArticleCard({
@@ -16,6 +17,7 @@ export default function ArticleCard({
   index,
   bookmarked = false,
   onToggleBookmark,
+  softEntrance = false,
 }: Props) {
   const [imgError, setImgError] = useState(false);
   const [faviconError, setFaviconError] = useState(false);
@@ -28,8 +30,8 @@ export default function ArticleCard({
   return (
     <>
       <article
-        className="group bg-surface border border-line rounded-[14px] overflow-hidden transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:-translate-y-[3px] animate-card-in cursor-pointer"
-        style={{ animationDelay: `${Math.min(index * 0.045, 0.7)}s` }}
+        className={`group bg-surface border border-line rounded-[14px] overflow-hidden transition-all duration-250 ease-[cubic-bezier(0.16,1,0.3,1)] hover:shadow-[0_8px_30px_rgba(0,0,0,0.1)] hover:-translate-y-[3px] cursor-pointer ${softEntrance ? "animate-fade-in" : "animate-card-in"}`}
+        style={{ animationDelay: softEntrance ? `${Math.min(index * 0.03, 0.2)}s` : `${Math.min(index * 0.045, 0.7)}s` }}
         onClick={() => setModalOpen(true)}
       >
         {/* Image */}
