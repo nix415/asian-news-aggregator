@@ -1,14 +1,15 @@
 @import "tailwindcss";
 
 @theme {
-  --color-bg: #f2e8d5;
+  /* Option B: clean neutral / tech palette */
+  --color-bg: #f7f7f7;
   --color-surface: #ffffff;
-  --color-primary: #0e0d0c;
-  --color-mid: #555050;
-  --color-muted: #9e9890;
-  --color-line: #e4e0db;
-  --color-accent: #c4655c;
-  --color-fresh: #5a9e8f;
+  --color-primary: #111827;
+  --color-mid: #374151;
+  --color-muted: #6b7280;
+  --color-line: #e5e7eb;
+  --color-accent: #2563eb;
+  --color-fresh: #10b981;
 
   --font-family-sans: "DM Sans", sans-serif;
   --font-family-serif: "DM Serif Display", serif;
@@ -56,14 +57,14 @@ a:focus-visible,
 
 /* Dark mode overrides */
 html.dark {
-  --color-bg: #141414;
-  --color-surface: #1e1e1e;
-  --color-primary: #e8e4df;
-  --color-mid: #a8a4a0;
-  --color-muted: #6e6a65;
-  --color-line: #2e2e2e;
-  --color-accent: #d4756c;
-  --color-fresh: #6ab8a8;
+  --color-bg: #0b0f14;
+  --color-surface: #111827;
+  --color-primary: #e5e7eb;
+  --color-mid: #cbd5e1;
+  --color-muted: #9ca3af;
+  --color-line: #1f2937;
+  --color-accent: #60a5fa;
+  --color-fresh: #34d399;
 }
 
 /* Gradient text for the "news" badge */
@@ -186,43 +187,51 @@ html.dark {
 
 /* Theme-aware overlays */
 .overlay-gradient-r {
-  background: linear-gradient(to right, rgba(242,232,213,0.98) 35%, rgba(242,232,213,0.6));
+  background: linear-gradient(
+    to right,
+    rgba(247, 247, 247, 0.98) 35%,
+    rgba(247, 247, 247, 0.6)
+  );
 }
 html.dark .overlay-gradient-r {
-  background: linear-gradient(to right, rgba(20,20,20,0.98) 35%, rgba(20,20,20,0.6));
+  background: linear-gradient(
+    to right,
+    rgba(11, 15, 20, 0.98) 35%,
+    rgba(11, 15, 20, 0.6)
+  );
 }
 
 .overlay-gradient-b {
   background: linear-gradient(
     to bottom,
-    rgba(242,232,213,0) 0%,
-    rgba(242,232,213,0.2) 20%,
-    rgba(242,232,213,0.75) 60%,
-    rgba(242,232,213,0.95) 100%
+    rgba(247, 247, 247, 0) 0%,
+    rgba(247, 247, 247, 0.2) 20%,
+    rgba(247, 247, 247, 0.75) 60%,
+    rgba(247, 247, 247, 0.95) 100%
   );
 }
 html.dark .overlay-gradient-b {
   background: linear-gradient(
     to bottom,
-    rgba(20,20,20,0) 0%,
-    rgba(20,20,20,0.2) 20%,
-    rgba(20,20,20,0.75) 60%,
-    rgba(20,20,20,0.95) 100%
+    rgba(11, 15, 20, 0) 0%,
+    rgba(11, 15, 20, 0.2) 20%,
+    rgba(11, 15, 20, 0.75) 60%,
+    rgba(11, 15, 20, 0.95) 100%
   );
 }
 
 .overlay-solid {
-  background: rgba(242,232,213,1);
+  background: rgba(247, 247, 247, 1);
 }
 html.dark .overlay-solid {
-  background: rgba(20,20,20,1);
+  background: rgba(11, 15, 20, 1);
 }
 
 .header-blur {
-  background: rgba(242,232,213,0.94);
+  background: rgba(247, 247, 247, 0.94);
 }
 html.dark .header-blur {
-  background: rgba(20,20,20,0.94);
+  background: rgba(11, 15, 20, 0.94);
 }
 
 /* Hide scrollbar but keep scrolling */
