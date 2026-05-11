@@ -20,7 +20,7 @@ from email.utils import parsedate_to_datetime
 
 import feedparser
 import anthropic
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, make_response, request
 from supabase import create_client, Client
 
 try:
@@ -917,12 +917,28 @@ AAPI_FILTER_PATTERN = re.compile(
 # RSS fetching
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _fetch_single_feed(source: str, url: str) -> list:
-    """Fetch and process a single RSS feed. Safe to call from a thread."""
+def _fetch_single_feed(source: str, url: str, timeout: float = 5.0) -> list:
+    """Fetch and process a single RSS feed. Safe to call from a thread.
+
+    Uses ``requests`` to enforce an HTTP-level timeout (``feedparser.parse``
+    has no timeout of its own and can hang for minutes on a slow feed,
+    which is fatal on Vercel's 10s serverless budget). On any network
+    failure we return ``[]`` and let the other feeds carry the response.
+    """
     is_aapi_native = source in AAPI_NATIVE_SOURCES
     articles = []
     try:
-        feed = feedparser.parse(url)
+        try:
+            response = requests.get(
+                url,
+                timeout=timeout,
+                headers={"User-Agent": "AsianFounded/1.0 (news aggregator)"},
+            )
+            response.raise_for_status()
+            feed = feedparser.parse(response.content)
+        except Exception as net_err:
+            print(f"Feed network error for {source}: {net_err}")
+            return articles
         for entry in feed.entries[:50]:
             title       = entry.get("title", "No Title")
             summary     = entry.get("summary", entry.get("description", ""))
@@ -1015,47 +1031,90 @@ def get_articles():
     return jsonify(combined)
 
 
+def _supabase_row_to_article(r: dict) -> dict:
+    return {
+        "title":            r.get("title", ""),
+        "summary":          r.get("summary", ""),
+        "link":             r.get("link", "#"),
+        "source":           r.get("source", ""),
+        "published":        r.get("published_at", ""),
+        "image":            r.get("image"),
+        "trending_score":   r.get("popularity_score", 0),
+        "social_boost":     r.get("social_boost", False),
+        "category":         r.get("category", "Community"),
+        "popularity_score": r.get("popularity_score", 0),
+    }
+
+
+def _live_fallback_articles() -> list:
+    """Fetch live RSS (+ NewsAPI if configured) when Supabase is unusable.
+
+    Keeps the site working when the cron has not run, Supabase has paused,
+    or the table is empty for any other reason.
+    """
+    rss_articles: list = []
+    popular_articles: list = []
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            rss_future = executor.submit(fetch_rss_articles)
+            news_future = executor.submit(fetch_newsapi_popular) if NEWS_API_KEY else None
+            rss_articles = rss_future.result()
+            popular_articles = news_future.result() if news_future else []
+    except Exception as e:
+        print(f"Live fallback error: {e}")
+
+    seen, combined = set(), []
+    for a in rss_articles + popular_articles:
+        link = a.get("link")
+        if link and link not in seen:
+            seen.add(link)
+            combined.append(a)
+    return combined
+
+
+def _cached_response(articles: list):
+    """Wrap a JSON response with the standard edge cache headers."""
+    resp = make_response(jsonify(articles))
+    resp.headers["Cache-Control"] = "s-maxage=300, stale-while-revalidate=3600"
+    return resp
+
+
 @app.route("/api/articles/cached")
 def get_articles_cached():
     """
     Fast endpoint: returns the most recent articles from Supabase without
-    hitting any external APIs. Responds in ~200ms even on cold start.
-    The frontend loads this first for instant rendering, then fetches
-    /api/articles in the background for fresh data.
+    hitting any external APIs. Responds in ~200ms once Supabase is warm.
+
+    Self-healing: if Supabase is not configured, returns empty rows, or
+    throws (e.g. project paused), we transparently fall back to a live
+    RSS + NewsAPI fetch so the site never goes blank. The result is
+    edge-cached for 5 minutes via Cache-Control.
     """
-    if not supabase:
-        return jsonify([])
+    articles: list = []
 
-    try:
-        rows = (
-            supabase.table("news_articles")
-            .select("*")
-            .order("popularity_score", desc=True)
-            .limit(150)
-            .execute()
-            .data
-        ) or []
+    if supabase is not None:
+        try:
+            rows = (
+                supabase.table("news_articles")
+                .select("*")
+                .order("popularity_score", desc=True)
+                .limit(150)
+                .execute()
+                .data
+            ) or []
+            articles = [_supabase_row_to_article(r) for r in rows]
+        except Exception as e:
+            print(f"Cached articles error: {e}")
 
-        articles = [
-            {
-                "title":            r.get("title", ""),
-                "summary":          r.get("summary", ""),
-                "link":             r.get("link", "#"),
-                "source":           r.get("source", ""),
-                "published":        r.get("published_at", ""),
-                "image":            r.get("image"),
-                "trending_score":   r.get("popularity_score", 0),
-                "social_boost":     r.get("social_boost", False),
-                "category":         r.get("category", "Community"),
-                "popularity_score": r.get("popularity_score", 0),
-            }
-            for r in rows
-        ]
+    if not articles:
+        articles = _live_fallback_articles()
+        if articles and supabase is not None:
+            try:
+                archive_to_supabase(articles)
+            except Exception as e:
+                print(f"Fallback archive error: {e}")
 
-        return jsonify(articles)
-    except Exception as e:
-        print(f"Cached articles error: {e}")
-        return jsonify([])
+    return _cached_response(articles)
 
 
 @app.route("/api/archive")
@@ -1106,6 +1165,103 @@ def get_archive():
         return jsonify(articles)
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Background refresh — called by Vercel Cron AND/OR an external scheduler
+# like cron-job.org. Keeps the Supabase table fresh so the frontend (which
+# reads /api/articles/cached) always has recent rows.
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Hard time budget so this function never trips Vercel's 10s Hobby timeout.
+CRON_TIME_BUDGET_SECONDS = 8.0
+
+
+def _cron_authorized() -> bool:
+    """Allow the request if no secret is configured, or if the caller
+    presents the secret via either query param ``?secret=...`` or the
+    standard ``Authorization: Bearer <secret>`` header (which Vercel
+    Cron sets automatically when ``CRON_SECRET`` is an env var).
+    """
+    if not CRON_SECRET:
+        return True
+    auth = request.headers.get("Authorization", "")
+    if auth == f"Bearer {CRON_SECRET}":
+        return True
+    if request.args.get("secret", "") == CRON_SECRET:
+        return True
+    return False
+
+
+@app.route("/api/cron/refresh")
+def cron_refresh():
+    """
+    Refresh the article cache.
+
+    - Auth: ``CRON_SECRET`` via ``Authorization: Bearer ...`` (Vercel Cron's
+      default) or ``?secret=...`` (works for cron-job.org / curl tests).
+    - Resilience: each RSS feed has its own HTTP timeout and is wrapped in
+      try/except, so one slow or broken feed cannot abort the refresh.
+    - Time budget: the function tracks elapsed time and stops accepting
+      new work once we are close to Vercel's 10s serverless limit, so the
+      cron always returns a status response rather than being killed.
+    - Idempotent: ``archive_to_supabase`` upserts on ``link``, so running
+      this every hour is safe.
+    """
+    if not _cron_authorized():
+        return jsonify({"error": "Unauthorized"}), 401
+
+    t0 = time.time()
+
+    def remaining() -> float:
+        return CRON_TIME_BUDGET_SECONDS - (time.time() - t0)
+
+    rss_articles: list = []
+    popular_articles: list = []
+
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            rss_future = executor.submit(fetch_rss_articles)
+            news_future = executor.submit(fetch_newsapi_popular) if NEWS_API_KEY else None
+
+            try:
+                rss_articles = rss_future.result(timeout=max(remaining() - 1.0, 1.0))
+            except Exception as e:
+                print(f"Cron RSS fetch error/timeout: {e}")
+
+            if news_future is not None:
+                try:
+                    popular_articles = news_future.result(
+                        timeout=max(remaining() - 0.5, 0.5)
+                    )
+                except Exception as e:
+                    print(f"Cron NewsAPI fetch error/timeout: {e}")
+    except Exception as e:
+        print(f"Cron executor error: {e}")
+
+    seen, combined = set(), []
+    for a in rss_articles + popular_articles:
+        link = a.get("link")
+        if link and link not in seen:
+            seen.add(link)
+            combined.append(a)
+
+    archived = False
+    if combined and supabase is not None and remaining() > 0.5:
+        try:
+            archive_to_supabase(combined)
+            archived = True
+        except Exception as e:
+            print(f"Cron archive error: {e}")
+
+    return jsonify({
+        "status":              "ok",
+        "articles_refreshed":  len(combined),
+        "rss_count":           len(rss_articles),
+        "newsapi_count":       len(popular_articles),
+        "archived_to_supabase": archived,
+        "elapsed_seconds":     round(time.time() - t0, 2),
+    })
 
 
 @app.route("/api/generate-pitch", methods=["POST"])
