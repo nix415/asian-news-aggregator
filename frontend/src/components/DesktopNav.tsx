@@ -1,17 +1,12 @@
 import { useNavigate, useLocation } from "react-router-dom";
 
-interface Props {
-  dark: boolean;
-  onToggleDark: () => void;
-}
-
 const LINKS = [
   { path: "/", label: "Home" },
   { path: "/top-picks", label: "Top Picks" },
   { path: "/saved", label: "Saved" },
 ];
 
-export default function DesktopNav({ dark, onToggleDark }: Props) {
+export default function DesktopNav() {
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -36,25 +31,6 @@ export default function DesktopNav({ dark, onToggleDark }: Props) {
             </button>
           );
         })}
-
-        <button
-          type="button"
-          onClick={onToggleDark}
-          className="absolute right-6 flex items-center justify-center w-8 h-8 rounded-sm bg-surface border border-line text-mid hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 transition-colors"
-          title={dark ? "Switch to light mode" : "Switch to dark mode"}
-          aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-        >
-          {dark ? (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <circle cx="12" cy="12" r="5" />
-              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" />
-            </svg>
-          ) : (
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
-            </svg>
-          )}
-        </button>
       </div>
     </nav>
   );

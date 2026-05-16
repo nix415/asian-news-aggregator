@@ -2,7 +2,6 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useCallback, lazy, Suspense } from "react";
 import { useArticles } from "./hooks/useArticles";
 import { useBookmarks } from "./hooks/useBookmarks";
-import { useDarkMode } from "./hooks/useDarkMode";
 import { ToastProvider, useToast } from "./components/Toast";
 import ScrollToTop from "./components/ScrollToTop";
 import MobileNav from "./components/MobileNav";
@@ -24,7 +23,6 @@ function PageLoader() {
 function AppRoutes() {
   const { articles, loading } = useArticles();
   const { isBookmarked, toggle: toggleBookmark } = useBookmarks();
-  const { dark, toggle: toggleDark } = useDarkMode();
   const { showToast } = useToast();
 
   const handleToggleBookmark = useCallback(
@@ -44,7 +42,7 @@ function AppRoutes() {
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      {!isLanding && <DesktopNav dark={dark} onToggleDark={toggleDark} />}
+      {!isLanding && <DesktopNav />}
       <main id="main-content" className={isLanding ? "" : "pt-0 sm:pt-12"}>
         <Suspense fallback={<PageLoader />}>
           <Routes>
@@ -54,8 +52,6 @@ function AppRoutes() {
                 <Landing
                   articles={articles}
                   loading={loading}
-                  dark={dark}
-                  onToggleDark={toggleDark}
                 />
               }
             />

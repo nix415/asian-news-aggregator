@@ -12,7 +12,7 @@ I built this during my **social media internship at [Asian Founded](https://www.
 - Sorts stories into four editorial categories: **Brand & Founder, Culture, Community, Lifestyle & New Openings**
 - Reddit trend signals to surface what audiences are actually engaging with
 - Optional AI-assisted social copy generation for Twitter, Instagram, and LinkedIn (Anthropic Claude)
-- Bookmarks, dark mode, and responsive UI
+- Bookmarks and responsive UI
 
 ## Tech stack
 
