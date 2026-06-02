@@ -45,6 +45,22 @@ NEWS_API_KEY: str = os.environ.get("NEWS_API_KEY", "")
 YOUTUBE_API_KEY: str = os.environ.get("YOUTUBE_API_KEY", "")
 CRON_SECRET: str = os.environ.get("CRON_SECRET", "")
 
+# Google Trends (pytrends) is the slowest and least reliable trend source, so
+# it is opt-in via this flag and never runs on the live request path.
+ENABLE_GOOGLE_TRENDS: bool = os.environ.get("ENABLE_GOOGLE_TRENDS", "").lower() in ("1", "true", "yes")
+
+# Trend keyword caches are only (re)populated while this flag is True. Live
+# request paths leave it False, so a cold cache returns instantly instead of
+# triggering blocking network calls (pytrends/Reddit/YouTube/Wikipedia) that
+# can exceed the serverless time limit. Only the scheduled cron flips it True
+# to warm the caches under its own time budget.
+_warm_trends: bool = False
+
+
+def _set_warm_trends(value: bool) -> None:
+    global _warm_trends
+    _warm_trends = value
+
 # ── RSS feeds ─────────────────────────────────────────────────────────────────
 RSS_FEEDS = {
     "NBC Asian America":        "https://www.nbcnews.com/id/3032091/device/rss/rss.xml",
@@ -208,6 +224,10 @@ def fetch_reddit_scored_keywords() -> dict:
     if _reddit_scored_keywords and (now - _reddit_cache_time) < REDDIT_CACHE_SECONDS:
         return _reddit_scored_keywords
 
+    # Live request paths only read the existing cache; warming is cron's job.
+    if not _warm_trends:
+        return _reddit_scored_keywords
+
     scored: dict = {}
     with ThreadPoolExecutor(max_workers=len(REDDIT_SUBREDDITS)) as executor:
         futures = [executor.submit(_fetch_single_subreddit, sub) for sub in REDDIT_SUBREDDITS]
@@ -244,6 +264,11 @@ def fetch_google_trends_keywords() -> dict:
 
     now = time.time()
     if _gtrends_scored_keywords and (now - _gtrends_cache_time) < GTRENDS_CACHE_SECONDS:
+        return _gtrends_scored_keywords
+
+    # Skip on live request paths, and entirely unless explicitly enabled —
+    # pytrends can hang for tens of seconds across the seed terms.
+    if not _warm_trends or not ENABLE_GOOGLE_TRENDS:
         return _gtrends_scored_keywords
 
     if TrendReq is None:
@@ -369,6 +394,10 @@ def fetch_youtube_trending_keywords() -> dict:
     if _youtube_scored_keywords and (now - _youtube_cache_time) < YOUTUBE_CACHE_SECONDS:
         return _youtube_scored_keywords
 
+    # Live request paths only read the existing cache; warming is cron's job.
+    if not _warm_trends:
+        return _youtube_scored_keywords
+
     if not YOUTUBE_API_KEY:
         print("YOUTUBE_API_KEY not set — skipping YouTube fetch.")
         return {}
@@ -416,6 +445,10 @@ def fetch_wikipedia_trending_keywords() -> dict:
 
     now = time.time()
     if _wikipedia_scored_keywords and (now - _wikipedia_cache_time) < WIKIPEDIA_CACHE_SECONDS:
+        return _wikipedia_scored_keywords
+
+    # Live request paths only read the existing cache; warming is cron's job.
+    if not _warm_trends:
         return _wikipedia_scored_keywords
 
     scored: dict = {}
@@ -1178,13 +1211,17 @@ CRON_TIME_BUDGET_SECONDS = 8.0
 
 
 def _cron_authorized() -> bool:
-    """Allow the request if no secret is configured, or if the caller
-    presents the secret via either query param ``?secret=...`` or the
-    standard ``Authorization: Bearer <secret>`` header (which Vercel
-    Cron sets automatically when ``CRON_SECRET`` is an env var).
+    """Authorize only when the caller presents the configured ``CRON_SECRET``
+    via either the query param ``?secret=...`` or the standard
+    ``Authorization: Bearer <secret>`` header (which Vercel Cron sets
+    automatically when ``CRON_SECRET`` is an env var). If no secret is
+    configured the route is locked (fails closed).
     """
+    # Fail closed: without a configured secret the refresh route stays locked
+    # so nobody can trigger the expensive fetch. Set CRON_SECRET (Vercel Cron
+    # sends it automatically as a Bearer token) to enable scheduled refreshes.
     if not CRON_SECRET:
-        return True
+        return False
     auth = request.headers.get("Authorization", "")
     if auth == f"Bearer {CRON_SECRET}":
         return True
@@ -1219,6 +1256,8 @@ def cron_refresh():
     rss_articles: list = []
     popular_articles: list = []
 
+    # The cron is the only path allowed to warm the trend keyword caches.
+    _set_warm_trends(True)
     try:
         with ThreadPoolExecutor(max_workers=2) as executor:
             rss_future = executor.submit(fetch_rss_articles)
@@ -1238,6 +1277,8 @@ def cron_refresh():
                     print(f"Cron NewsAPI fetch error/timeout: {e}")
     except Exception as e:
         print(f"Cron executor error: {e}")
+    finally:
+        _set_warm_trends(False)
 
     seen, combined = set(), []
     for a in rss_articles + popular_articles:
@@ -1264,12 +1305,19 @@ def cron_refresh():
     })
 
 
+PITCH_MODEL = "claude-opus-4-5-20251101"
+
+
 @app.route("/api/generate-pitch", methods=["POST"])
 def generate_pitch():
-    data     = request.json
+    data     = request.get_json(silent=True) or {}
     title    = data.get("title", "")
     summary  = data.get("summary", "")
     platform = data.get("platform", "twitter")
+
+    if not title and not summary:
+        return jsonify({"error": "title or summary is required"}), 400
+
     instructions = {
         "twitter":   "Punchy tweet, max 240 chars, 2-3 hashtags.",
         "instagram": "Instagram caption, 2-4 sentences, 8-10 hashtags at end.",
@@ -1285,7 +1333,7 @@ def generate_pitch():
     try:
         client = anthropic.Anthropic()
         msg = client.messages.create(
-            model="claude-opus-4-5", max_tokens=300,
+            model=PITCH_MODEL, max_tokens=300,
             messages=[{"role": "user", "content": prompt}],
         )
         return jsonify({"pitch": msg.content[0].text.strip()})
