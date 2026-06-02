@@ -70,7 +70,23 @@ To keep live requests well within the serverless time limit, the trend-keyword f
 
 ## Deployment
 
-Connect the repository to Vercel and add the environment variables in the project settings. `vercel.json` handles the build and routes `/api/*` to the Python serverless handler. Set `CRON_SECRET` so the scheduled refresh (configured in `vercel.json` to run every 6 hours) can run.
+Connect the repository to Vercel and add the environment variables in the project settings. `vercel.json` handles the build and routes `/api/*` to the Python serverless handler.
+
+### Required setup for the feed to stay fresh
+
+1. **Set `CRON_SECRET`** in the Vercel project settings. The refresh route fails closed, and Vercel Cron only sends its `Authorization: Bearer` token when this variable is set — without it `/api/cron/refresh` returns 401 and the feed stops updating.
+2. **Create the database indexes once** in the Supabase SQL editor (the app does not create them itself). The full `news_articles` schema and indexes are documented in the docstring of `archive_to_supabase()` in `api/app.py`. The newest-first feed relies on:
+
+   ```sql
+   create index if not exists idx_news_articles_published
+       on news_articles (published_at desc);
+   ```
+
+### Things to know
+
+- **Feed ordering:** `/api/articles/cached` returns the 150 most recent articles by published date, so new stories always surface. Pages that want engagement ordering (Top Picks, the Category sort controls) re-rank client-side.
+- **Cron cadence:** `vercel.json` schedules the refresh every 6 hours, but Vercel's Hobby plan runs cron jobs roughly once per day. Expect about daily updates on Hobby; upgrade for more frequent refreshes.
+- **Supabase free tier** pauses a project after ~7 days of inactivity. The cached endpoint self-heals to a live RSS fetch so the site never goes blank, but the archive won't update while the project is paused.
 
 ---
 

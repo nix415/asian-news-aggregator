@@ -765,6 +765,8 @@ def archive_to_supabase(articles: list) -> None:
             on news_articles (category);
         create index if not exists idx_news_articles_popularity
             on news_articles (popularity_score desc);
+        create index if not exists idx_news_articles_published
+            on news_articles (published_at desc);
     """
     if not supabase:
         return
@@ -1127,10 +1129,15 @@ def get_articles_cached():
 
     if supabase is not None:
         try:
+            # Newest-first so fresh stories always surface. Frozen
+            # popularity_score would otherwise let old high-scoring articles
+            # permanently occupy the 150-row window. Per-page views re-sort
+            # client-side when they want engagement ordering. Backed by the
+            # idx_news_articles_published index (see archive_to_supabase).
             rows = (
                 supabase.table("news_articles")
                 .select("*")
-                .order("popularity_score", desc=True)
+                .order("published_at", desc=True)
                 .limit(150)
                 .execute()
                 .data
