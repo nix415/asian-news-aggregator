@@ -85,7 +85,7 @@ Connect the repository to Vercel and add the environment variables in the projec
 ### Things to know
 
 - **Feed ordering:** `/api/articles/cached` returns the 150 most recent articles by published date, so new stories always surface. Pages that want engagement ordering (Top Picks, the Category sort controls) re-rank client-side.
-- **Cron cadence:** `vercel.json` schedules the refresh every 6 hours, but Vercel's Hobby plan runs cron jobs roughly once per day. Expect about daily updates on Hobby; upgrade for more frequent refreshes.
+- **Cron cadence:** `vercel.json` schedules the refresh once per day at 14:00 UTC (Hobby plan limit). Upgrade to Pro for more frequent cron runs.
 - **Supabase free tier** pauses a project after ~7 days of inactivity. The cached endpoint self-heals to a live RSS fetch so the site never goes blank, but the archive won't update while the project is paused.
 
 ---
