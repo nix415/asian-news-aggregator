@@ -790,6 +790,9 @@ def archive_to_supabase(articles: list) -> None:
     if not rows:
         return
 
+    # Best-effort and non-blocking: a write failure here must never break the
+    # request. We log loudly (with type) so a persistently failing archive
+    # (schema drift, RLS, paused project) is visible in the function logs.
     try:
         for i in range(0, len(rows), 100):
             supabase.table("news_articles").upsert(
@@ -798,7 +801,8 @@ def archive_to_supabase(articles: list) -> None:
             ).execute()
         print(f"Archived {len(rows)} articles to Supabase.")
     except Exception as e:
-        print(f"Supabase archive error: {e}")
+        print(f"Supabase archive FAILED ({type(e).__name__}): {e} — "
+              f"serving live data; archive will retry on next refresh.")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -1035,35 +1039,67 @@ ARTICLES_CACHE_SECONDS = 300  # 5 minutes
 # Routes
 # ─────────────────────────────────────────────────────────────────────────────
 
-@app.route("/api/articles")
-def get_articles():
-    """
-    Live feed: fetch RSS + NewsAPI popular in parallel, archive to Supabase,
-    return combined. Cached for 5 minutes to avoid hammering external APIs.
+def _dedupe_and_sort(articles: list) -> list:
+    """Dedupe by link and sort newest-first. Undated articles sink to the end
+    so they never crowd out fresh, dated stories."""
+    seen, combined = set(), []
+    for a in articles:
+        link = a.get("link")
+        if link and link not in seen:
+            seen.add(link)
+            combined.append(a)
+
+    def _sort_key(a: dict) -> float:
+        dt = parse_date(a.get("published", ""))
+        if dt is None:
+            return float("-inf")
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.timestamp()
+
+    combined.sort(key=_sort_key, reverse=True)
+    return combined
+
+
+def get_live_articles(force: bool = False) -> list:
+    """Live feed: RSS + NewsAPI popular, deduped and sorted newest-first.
+
+    Backed by a 5-minute in-memory cache so repeated requests on a warm
+    container don't re-hit the feeds. Best-effort archives to Supabase. This
+    is the reliable source of truth — the feeds are healthy even when the
+    Supabase cache is empty, paused, or holds stale rows.
     """
     global _articles_cache, _articles_cache_time
 
     now = time.time()
-    if _articles_cache and (now - _articles_cache_time) < ARTICLES_CACHE_SECONDS:
-        return jsonify(_articles_cache)
+    if not force and _articles_cache and (now - _articles_cache_time) < ARTICLES_CACHE_SECONDS:
+        return _articles_cache
 
-    with ThreadPoolExecutor(max_workers=2) as executor:
-        rss_future  = executor.submit(fetch_rss_articles)
-        news_future = executor.submit(fetch_newsapi_popular)
-        rss_articles     = rss_future.result()
-        popular_articles = news_future.result()
+    rss_articles: list = []
+    popular_articles: list = []
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            rss_future = executor.submit(fetch_rss_articles)
+            news_future = executor.submit(fetch_newsapi_popular) if NEWS_API_KEY else None
+            rss_articles = rss_future.result()
+            popular_articles = news_future.result() if news_future else []
+    except Exception as e:
+        print(f"Live fetch error: {e}")
 
-    seen, combined = set(), []
-    for a in rss_articles + popular_articles:
-        if a["link"] not in seen:
-            seen.add(a["link"])
-            combined.append(a)
+    combined = _dedupe_and_sort(rss_articles + popular_articles)
 
-    _articles_cache      = combined
-    _articles_cache_time = now
+    if combined:
+        _articles_cache = combined
+        _articles_cache_time = now
+        archive_to_supabase(combined)
 
-    archive_to_supabase(combined)
-    return jsonify(combined)
+    return combined
+
+
+@app.route("/api/articles")
+def get_articles():
+    """Live feed endpoint. See get_live_articles()."""
+    return jsonify(get_live_articles())
 
 
 def _supabase_row_to_article(r: dict) -> dict:
@@ -1081,32 +1117,6 @@ def _supabase_row_to_article(r: dict) -> dict:
     }
 
 
-def _live_fallback_articles() -> list:
-    """Fetch live RSS (+ NewsAPI if configured) when Supabase is unusable.
-
-    Keeps the site working when the cron has not run, Supabase has paused,
-    or the table is empty for any other reason.
-    """
-    rss_articles: list = []
-    popular_articles: list = []
-    try:
-        with ThreadPoolExecutor(max_workers=2) as executor:
-            rss_future = executor.submit(fetch_rss_articles)
-            news_future = executor.submit(fetch_newsapi_popular) if NEWS_API_KEY else None
-            rss_articles = rss_future.result()
-            popular_articles = news_future.result() if news_future else []
-    except Exception as e:
-        print(f"Live fallback error: {e}")
-
-    seen, combined = set(), []
-    for a in rss_articles + popular_articles:
-        link = a.get("link")
-        if link and link not in seen:
-            seen.add(link)
-            combined.append(a)
-    return combined
-
-
 def _cached_response(articles: list):
     """Wrap a JSON response with the standard edge cache headers."""
     resp = make_response(jsonify(articles))
@@ -1114,29 +1124,32 @@ def _cached_response(articles: list):
     return resp
 
 
+# Below this many valid Supabase rows, we treat the cache as unhealthy and
+# serve live data instead (covers an empty, paused, or stale-rows table).
+MIN_GOOD_CACHED_ROWS = 30
+
+
 @app.route("/api/articles/cached")
 def get_articles_cached():
     """
-    Fast endpoint: returns the most recent articles from Supabase without
-    hitting any external APIs. Responds in ~200ms once Supabase is warm.
+    Primary feed for the frontend.
 
-    Self-healing: if Supabase is not configured, returns empty rows, or
-    throws (e.g. project paused), we transparently fall back to a live
-    RSS + NewsAPI fetch so the site never goes blank. The result is
-    edge-cached for 5 minutes via Cache-Control.
+    Strategy (self-healing, live-first): read recent *valid* rows from
+    Supabase — only those with a real published date, newest-first, backed by
+    the idx_news_articles_published index. If Supabase is unconfigured,
+    paused, errors, or holds too few valid rows (e.g. only stale/corrupt
+    rows), fall back to the proven-good live RSS + NewsAPI fetch, which also
+    re-archives good data so the cache heals itself over time. Edge-cached
+    for 5 minutes via Cache-Control.
     """
     articles: list = []
 
     if supabase is not None:
         try:
-            # Newest-first so fresh stories always surface. Frozen
-            # popularity_score would otherwise let old high-scoring articles
-            # permanently occupy the 150-row window. Per-page views re-sort
-            # client-side when they want engagement ordering. Backed by the
-            # idx_news_articles_published index (see archive_to_supabase).
             rows = (
                 supabase.table("news_articles")
                 .select("*")
+                .not_.is_("published_at", "null")
                 .order("published_at", desc=True)
                 .limit(150)
                 .execute()
@@ -1146,13 +1159,10 @@ def get_articles_cached():
         except Exception as e:
             print(f"Cached articles error: {e}")
 
-    if not articles:
-        articles = _live_fallback_articles()
-        if articles and supabase is not None:
-            try:
-                archive_to_supabase(articles)
-            except Exception as e:
-                print(f"Fallback archive error: {e}")
+    if len(articles) < MIN_GOOD_CACHED_ROWS:
+        live = get_live_articles()
+        if live:
+            articles = live
 
     return _cached_response(articles)
 

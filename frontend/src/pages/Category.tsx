@@ -75,7 +75,12 @@ export default function Category({
 
     if (timeRange !== "all") {
       const cutoff = Date.now() - (TIME_CUTOFFS[timeRange] || 0);
-      list = list.filter((a) => new Date(a.published || 0).getTime() >= cutoff);
+      list = list.filter((a) => {
+        if (!a.published) return true;
+        const t = new Date(a.published).getTime();
+        if (Number.isNaN(t)) return true;
+        return t >= cutoff;
+      });
     }
 
     list.sort((a, b) => {
